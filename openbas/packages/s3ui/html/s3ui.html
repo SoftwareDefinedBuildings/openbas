@@ -1,0 +1,167 @@
+
+<template name="s3plot2">
+    <h1>foo</h1>
+</template>
+
+<template name="s3plot">
+        <h1>sMAP Plotting Tool</h1>
+        <h2>Graph</h2>
+        <style>
+            .outline {
+                border: 1px solid black;
+            }
+            td.checkboxlabel {
+                font-weight: bold;
+            }
+            input.datefield {
+                width: 200px;
+            }
+            input.axisname {
+                width: 75px;
+            }
+            input.axisrange {
+                width: 50px;
+            }
+            td.axisrangeselect {
+                text-align: right;
+            }
+        </style>
+        <style id="plotStyles">
+            polyline.streamRange {
+                fill: inherit;
+                fill-opacity: inherit;
+                stroke: none;
+            }
+
+            polyline.streamMean {
+                fill: none;
+                stroke: inherit;
+                stroke-opacity: 1;
+                stroke-width: inherit;
+            }
+
+            rect#clickscreen {
+                pointer-events: visibleFill;
+            }
+
+            rect.scrollDisabled {
+                visiblity: hidden;
+            }
+
+            .unclickedchart {
+                cursor: url(img/openhand.cur), move;
+            }
+
+            .clickedchart {
+                cursor: url(img/closedhand.cur), move;
+            }
+
+            path, line {
+                fill: none;
+                stroke: black;
+                shape-rendering: crispEdges;
+            }
+
+            text.title {
+               font-size: 1.25em;
+            }
+        </style>
+        <button onclick="document.getElementById('download-graph').innerHTML = 'Creating image...';
+        setTimeout(createPlotDownload, 50);">Export Current Graph to SVG Image</button>
+        <span id="download-graph"></span>
+        <div>
+            <span>Current Interval Size: </span>
+            <span id="interval-size">(No Data Loaded)</span>
+        </div>
+        <table>
+            <tr>
+                <td>
+                    <!-- Chart is built in this SVG element by the initPlot() function -->
+                    <svg id="chart" width="800" height="400">
+                        <rect width="800" height="400" fill="white"></rect> <!-- So the background is white, not transparent. -->
+                        <g id="plotDirections" transform="translate(50, 100)">
+                            <text transform="translate(0, 0)">1. Select streams from the list below.</text>
+                            <text transform="translate(0, 30)">2. Select a time range to load data.</text>
+                            <text transform="translate(0, 60)">3. If desired, change axis settings using the box to the right.</text>
+                            <text transform="translate(0, 90)">4. Click "Apply all Settings and Plot Data" to see the graph.</text>
+                            <text transform="translate(0, 120)">5. Use the mouse to zoom and scroll.</text>
+                            <text transform="translate(0, 150)">
+                                                        6. Optional: Change the display settings. If new streams are added or the time
+                                <tspan x="0" dy="1.2em">range is changed, the "Apply all Settings and Plot Data" must be clicked. All</tspan>
+                                <tspan x="0" dy="1.2em">other changes (removing streams, changing axes, etc.) will be applied</tspan>
+                                <tspan x="0" dy="1.2em">immediately by default.</tspan>
+                            </text>
+                        </g>
+                    </svg>
+                </td>
+                <td>
+                    <table>
+                        <tr>
+                            <td class="outline">
+                                <h3>Legend</h3>
+                                    <table>
+                                        <tbody id="legend"></tbody>
+                                    </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="outline">
+                                <h3>Axes</h3>
+                                <button onclick="addYAxis()">Add a Y-Axis</button>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Streams</th>
+                                            <th>Units</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="axes"></tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <button id="plotButton" onclick="addedStreams = false; changedTimes = false; updatePlot();">Apply all Settings and Plot Data</button>
+        <button onclick="resetZoom();">Reset Zoom</button>
+        <span id="plotLoading"></span> <!-- Displays details about how the plot is loading -->
+        <div>
+            <h2 style="display: inline-block;">Settings</h2>
+            <span>
+               <input type="checkbox" id="automaticAxisSetting" onchange="automaticAxisUpdate = !automaticAxisUpdate;
+                   if (automaticAxisUpdate) {
+                       if (otherChange) {
+                           applySettings();
+                       }
+                   } else {
+                       updatePlotMessage();
+                   }" checked>
+               <span>Automatically apply stream removals and changes to axis settings</span>
+            </span>
+        </div>
+        <h3>Select Time Range</h3>
+        <div id="timeselect">
+            Start:
+            <input type="text" class="datefield" id="startdate" onchange="changedTimes = true; updatePlotMessage();">
+            End:
+            <input type="text" class="datefield" id="enddate" onchange="changedTimes = true; updatePlotMessage();">
+            <button onclick="$('#enddate').val(dateConverter.format(new Date())).change();">Now</button>
+            Timezone:
+            <select id="timezoneSelect" onchange="var visibility = (this[this.selectedIndex].value == 'OTHER' ? 'visible' : 'hidden');
+                document.getElementById('otherTimezone').style.visibility = visibility;
+                changedTimes = true;
+                updatePlotMessage();">
+                <option value="America/Los_Angeles">America/Los_Angeles</option>
+                <option value="UTC">UTC</option>
+                <option value="OTHER">Other:</option>
+            </select>
+            <input type="text" id="otherTimezone" style="visibility: hidden;">
+        </div>
+        <h3>Select Streams</h3>
+        <button onclick="updateStreamList();">Refresh Stream Tree</button>
+        <span id="streamLoading"></span> <!-- Displays details about how the streams are loading -->
+        <div id="streamTree"></div>
+</template>

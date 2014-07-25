@@ -1,0 +1,8 @@
+{
+  "name": "jquery-simplecolorpicker",
+  "description": "A colorpicker for jquery",
+  "packages": 
+  {
+    "jquery":{}
+  }
+}

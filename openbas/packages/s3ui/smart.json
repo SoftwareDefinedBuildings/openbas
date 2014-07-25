@@ -1,0 +1,12 @@
+{
+  "name": "s3ui",
+  "description": "A plotting tool for sMAP 2/3",
+  "homepage": "https://github.com/SoftwareDefinedBuildings/smap3_ui",
+  "author": "Michael Andersen, Sam Kumar",
+  "version": "0.0.1",
+  "git": "https://github.com/SoftwareDefinedBuildings/smap3_ui.git",
+  "packages": {
+    "vakata-jstree":{},
+    "
+  }
+}

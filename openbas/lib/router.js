@@ -11,4 +11,9 @@ Router.map(function() {
       path: '/points/:uuid',
       data: function() { return Points.findOne({uuid: this.params.uuid}); },
     });
+  
+    this.route('smap_plot', 
+    {
+        path: '/plot/:uuid?'         
+    });
 });
