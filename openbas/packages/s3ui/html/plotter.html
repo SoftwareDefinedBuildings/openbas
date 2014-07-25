@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>sMAP Plotting Tool</title>
+        <link rel="stylesheet" type="text/css" href="http://www.ama3.com/anytime/anytime.5.0.3-1407041745.min.css"></link> <!-- Load styles for Any+Time -->
+        <link rel="stylesheet" type="text/css" href="jquery-simplecolorpicker/jquery.simplecolorpicker.css"></link> <!-- Load styles for jquery-simplecolorpicker -->
+        <link rel="stylesheet" type="text/css" href="vakata-jstree-e2596f5/dist/themes/default/style.min.css"></link> <!-- Load styles for jsTree -->
+        <style>
+            .outline {
+                border: 1px solid black;
+            }
+            td.checkboxlabel {
+                font-weight: bold;
+            }
+            input.datefield {
+                width: 200px;
+            }
+            input.axisname {
+                width: 75px;
+            }
+            input.axisrange {
+                width: 50px;
+            }
+            td.axisrangeselect {
+                text-align: right;
+            }
+        </style>
+        <style id="plotStyles">
+            polyline.streamRange {
+                fill: inherit;
+                fill-opacity: inherit;
+                stroke: none;
+            }
+
+            polyline.streamMean {
+                fill: none;
+                stroke: inherit;
+                stroke-opacity: 1;
+                stroke-width: inherit;
+            }
+
+            rect#clickscreen {
+                pointer-events: visibleFill;
+            }
+
+            rect.scrollDisabled {
+                visiblity: hidden;
+            }
+
+            .unclickedchart {
+                cursor: url(img/openhand.cur), move;
+            }
+
+            .clickedchart {
+                cursor: url(img/closedhand.cur), move;
+            }
+
+            path, line {
+                fill: none;
+                stroke: black;
+                shape-rendering: crispEdges;
+            }
+
+            text.title {
+               font-size: 1.25em;
+            }
+        </style>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> <!-- Load jQuery -->
+        <script src="http://www.ama3.com/anytime/anytime.5.0.3-1407041745.min.js"></script> <!-- Load Any+Time -->
+        <script src="d3/d3.min.js"></script> <!-- Load D3 -->
+        <script src="jquery-simplecolorpicker/jquery.simplecolorpicker.js"></script> <!-- Load jquery-simplecolorpicker -->
+        <script src="timezone-js/src/date.js"></script> <!-- Load timezone-js -->
+        <script src="vakata-jstree-e2596f5/dist/jstree.min.js"></script> <!-- Load jsTree -->
+        <script src="axis.js"></script>
+        <script src="plot.js"></script>
+        <script src="data.js"></script>
+        <script src="utils.js"></script>
+        <script>
+            // Set up timezone-js
+            timezoneJS.timezone.zoneFileBasePath = 'tz';
+            timezoneJS.timezone.init();
+            
+            var streamList = [];
+            var dateFormat = "%a %b %d, %Y %T";
+            var dateConverter = new AnyTime.Converter({format: dateFormat});
+            var makeColorMenu = makeMenuMaker();
+            var streamSettings = {}; // Stores the stream settings chosen in the legend (maps uuid to a setting object)
+            var selectedStreams = []; // Streams that have been selected and are displayed in the legend
+            var addedStreams;
+            var changedTimes;
+            var otherChange;
+            var automaticAxisUpdate = false; // True if axes will be updated without the need for an "Update Axes" button
+            var streamTree;
+            
+            function updateStreamList() {
+                $("span#streamLoading").html("Loading Streams...");
+                getURL('http://archiver.upmu.cal-sdb.org/backend/api/tags', function (data) {
+                        streamList = eval(data);
+                        
+                        $("span#streamLoading").html("");
+                          
+                        if (streamTree != undefined) {
+                            // Remove everything from legend before destroying tree
+                            var roots = streamTree.get_node("#").children;
+                            for (var i = 0; i < roots.length; i++) {
+                                selectNode(streamTree, false, streamTree.get_node(roots[i]));
+                            }
+                            streamTree.destroy(true);
+                            applySettings();
+                        }
+                        
+                        var streamTreeDiv = $("div#streamTree");
+                        streamTreeDiv.jstree({
+                                core: {
+                                    data: listToTree(streamList)
+                                },
+                                contextmenu: {
+                                    select_node: false,
+                                    items: getContextMenu
+                                },
+                                plugins: ["checkbox", "contextmenu"]
+                            });
+                        streamTree = $.jstree.reference(streamTreeDiv);
+                        streamTreeDiv.on("select_node.jstree", function (event, data) {
+                                selectNode(streamTree, true, data.node);
+                                applySettings();
+                            });
+                        streamTreeDiv.on("deselect_node.jstree", function (event, data) {
+                                selectNode(streamTree, false, data.node);
+                                applySettings();
+                            });
+                    }, "text");
+            }
+            
+            function showInfo (datum, button, parent) {
+                var description = document.createElement("tr");
+                description.appendChild(document.createElement("td"));
+                description.appendChild(document.createElement("td"));
+                description.lastChild.innerHTML = getInfo(datum);
+                parent.parentNode.insertBefore(description, parent.nextSibling);
+                button.innerHTML = 'Hide Details';
+                button.onclick = function () { hideInfo(this, this.parentNode.parentNode); };
+            }
+            
+            function hideInfo (button, parent) {
+                parent.parentNode.removeChild(parent.nextSibling);
+                button.innerHTML = 'Show Details';
+                button.onclick = function () { showInfo(this.__data__, this, this.parentNode.parentNode); };
+            }
+            
+            /* Adds or removes (depending on whether it is already present) a
+            stream to or from the legend. */
+            function toggleLegend (show, streamdata, update) {
+                if (update == undefined) {
+                    update = true;
+                }
+                if (show) {
+                    selectedStreams.push(streamdata);
+                    var row = d3.select("tbody#legend")
+                      .append("tr")
+                        .datum(streamdata)
+                        .attr("id", function (d) { return "legend-" + d.uuid; });
+                    var colorMenu = row.append("td")
+                        .append(makeColorMenu)
+                        .attr("id", function (d) { return "color-" + d.uuid; })
+                      .node();
+                    colorMenu.onchange = function () {
+                              var newColor = this[this.selectedIndex].value;
+                              var streamGroup= $("g#series-" + streamdata.uuid);
+                              streamGroup.attr("stroke", newColor);
+                              streamGroup.attr("fill", newColor);
+                              streamSettings[streamdata.uuid].color = newColor;
+                          };
+                    streamSettings[streamdata.uuid] = { color: colorMenu[colorMenu.selectedIndex].value, axisid: "y1" }; // axisid is changed
+                    var nameElem = row.append("td")
+                        .html(function (d) { return getFilepath(d); })
+                      .node();
+                    nameElem.onmouseover = function () { $("g#series-" + streamdata.uuid).attr({"stroke-width": 3, "fill-opacity": 0.5}); };
+                    nameElem.onmouseout = function () { $("g#series-" + streamdata.uuid).attr({"stroke-width": 1, "fill-opacity": 0.3}); };
+                    var selectElem = row.append("td")
+                      .append("select")
+                        .attr("class", "axis-select")
+                        .attr("id", "axis-select-" + streamdata.uuid);
+                    selectElem.selectAll("option")
+                      .data(yAxes)
+                      .enter()
+                      .append("option")
+                        .attr("class", function (d) { return "option-" + d.axisid; })
+                        .attr("value", function (d) { return d.axisid; })
+                        .html(function (d) { return d.axisname; });
+                    var selectNode = selectElem.node();
+                    var initIndex = guessYAxis(streamdata); // use a heuristic to get the initial selection
+                    if (initIndex == undefined) {
+                        initIndex = yAxes.length;
+                        addYAxis();
+                    }
+                    selectNode.selectedIndex = initIndex;
+                    selectNode.setAttribute("data-prevselect", selectNode[selectNode.selectedIndex].value);
+                    selectNode.onchange = function (event, suppressUpdate) {
+                            var newID = this[this.selectedIndex].value;
+                            changeAxis(streamdata, this.getAttribute("data-prevselect"), newID);
+                            this.setAttribute("data-prevselect", newID);
+                            if (suppressUpdate == undefined) {
+                                applySettings();
+                            }
+                        };
+                    changeAxis(streamdata, null, selectNode[selectNode.selectedIndex].value);
+                    $("select#color-" + streamdata.uuid).simplecolorpicker({picker: true});
+                    if (update && oldData.hasOwnProperty(streamdata.uuid)) { // If data has already been loaded, go ahead and display it
+                        applySettings();
+                    } else {
+                        addedStreams = true;
+                        updatePlotMessage();
+                    }
+                } else {
+                    var toRemove = document.getElementById("legend-" + streamdata.uuid);
+                    var selectElem = toRemove.lastChild.firstChild;
+                    var oldAxis = selectElem[selectElem.selectedIndex].value;
+                    changeAxis(streamdata, oldAxis, null);
+                    toRemove.parentNode.removeChild(toRemove);
+                    delete streamSettings[streamdata.uuid];
+                    for (var i = 0; i < selectedStreams.length; i++) {
+                        if (selectedStreams[i] == streamdata) {
+                            selectedStreams.splice(i, 1);
+                            break;
+                        }
+                    }
+                    if (update && oldData.hasOwnProperty(streamdata.uuid)) { // If the data hasn't been loaded, we don't have to do this
+                        applySettings(); // Make stream removal visible on the graph
+                    }
+                }
+            }
+            
+            function updatePlotMessage() {
+                var message = "";
+                if (automaticAxisUpdate) {
+                    if (addedStreams || changedTimes) {
+                        message = 'Click "Apply all Settings and Plot Data" to update the graph.';
+                    }
+                } else {
+                    if (addedStreams || changedTimes || otherChange) {
+                        message = 'Click "Apply all Settings and Plot Data" to update the graph.';
+                    }
+                }
+                document.getElementById("plotLoading").innerHTML = message;
+            }
+            
+            function getSelectedTimezone() {
+                var timezoneSelect = document.getElementById("timezoneSelect");
+                var selection = timezoneSelect[timezoneSelect.selectedIndex].value;
+                if (selection == "OTHER") {
+                    return document.getElementById("otherTimezone").value.trim();
+                } else {
+                    return selection;
+                }
+            }
+            
+            function createPlotDownload() {
+                var chartElem = document.getElementById("chart");
+                var graphStyle = document.getElementById("plotStyles").innerHTML;
+                var xmlData = '<svg width="' + chartElem.getAttribute("width") + '" height="' + chartElem.getAttribute("height") + '" background="white">'
+                    + '<defs><style type="text/css"><![CDATA[' + graphStyle + ']]></style></defs>' + chartElem.innerHTML + '</svg>';
+                var downloadAnchor = document.createElement("a");
+                downloadAnchor.innerHTML = "Download Image (created " + (new Date()).toLocaleString() + ", local time)";
+                downloadAnchor.setAttribute("href", 'data:text/svg;charset="utf-8",' + encodeURIComponent(xmlData));
+                downloadAnchor.setAttribute("download", "graph.svg");
+                var linkLocation = document.getElementById("download-graph");
+                linkLocation.innerHTML = ""; // Clear what was there before...
+                linkLocation.insertBefore(downloadAnchor, null); // ... and replace it with this download link
+            }
+            
+            $(function () {
+                    $(".datefield").AnyTime_picker({format: dateFormat});
+                    updateStreamList();
+                    automaticAxisUpdate = document.getElementById("automaticAxisSetting").checked; // Some browsers may fill in this value automatically after refresh
+                    addYAxis();
+                    $(".removebutton").remove(); // Get rid of the remove button for the first axis
+                    //axisMap.y1.axisname = document.getElementById("name-y1").value; // Some browsers may fill in this value automatically after refresh
+                    document.getElementById("timezoneSelect").onchange(); // In case the browser selects "Other:" after refresh
+                    addedStreams = false;
+                    changedTimes = false;
+                    otherChange = false;
+                    updatePlotMessage();
+                });
+        </script>
+    </head>
+    <body>
+        <h1>sMAP Plotting Tool</h1>
+        <h2>Graph</h2>
+        <button onclick="document.getElementById('download-graph').innerHTML = 'Creating image...';
+        setTimeout(createPlotDownload, 50);">Export Current Graph to SVG Image</button>
+        <span id="download-graph"></span>
+        <div>
+            <span>Current Interval Size: </span>
+            <span id="interval-size">(No Data Loaded)</span>
+        </div>
+        <table>
+            <tr>
+                <td>
+                    <!-- Chart is built in this SVG element by the initPlot() function -->
+                    <svg id="chart" width="800" height="400">
+                        <rect width="800" height="400" fill="white"></rect> <!-- So the background is white, not transparent. -->
+                        <g id="plotDirections" transform="translate(50, 100)">
+                            <text transform="translate(0, 0)">1. Select streams from the list below.</text>
+                            <text transform="translate(0, 30)">2. Select a time range to load data.</text>
+                            <text transform="translate(0, 60)">3. If desired, change axis settings using the box to the right.</text>
+                            <text transform="translate(0, 90)">4. Click "Apply all Settings and Plot Data" to see the graph.</text>
+                            <text transform="translate(0, 120)">5. Use the mouse to zoom and scroll.</text>
+                            <text transform="translate(0, 150)">
+                                                        6. Optional: Change the display settings. If new streams are added or the time
+                                <tspan x="0" dy="1.2em">range is changed, the "Apply all Settings and Plot Data" must be clicked. All</tspan>
+                                <tspan x="0" dy="1.2em">other changes (removing streams, changing axes, etc.) will be applied</tspan>
+                                <tspan x="0" dy="1.2em">immediately by default.</tspan>
+                            </text>
+                        </g>
+                    </svg>
+                </td>
+                <td>
+                    <table>
+                        <tr>
+                            <td class="outline">
+                                <h3>Legend</h3>
+                                    <table>
+                                        <tbody id="legend"></tbody>
+                                    </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="outline">
+                                <h3>Axes</h3>
+                                <button onclick="addYAxis()">Add a Y-Axis</button>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Streams</th>
+                                            <th>Units</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="axes"></tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <button id="plotButton" onclick="addedStreams = false; changedTimes = false; updatePlot();">Apply all Settings and Plot Data</button>
+        <button onclick="resetZoom();">Reset Zoom</button>
+        <span id="plotLoading"></span> <!-- Displays details about how the plot is loading -->
+        <div>
+            <h2 style="display: inline-block;">Settings</h2>
+            &nbsp&nbsp&nbsp
+            <span>
+               <input type="checkbox" id="automaticAxisSetting" onchange="automaticAxisUpdate = !automaticAxisUpdate;
+                   if (automaticAxisUpdate) {
+                       if (otherChange) {
+                           applySettings();
+                       }
+                   } else {
+                       updatePlotMessage();
+                   }" checked></append>
+               <span>Automatically apply stream removals and changes to axis settings</span>
+            </span>
+        </div>
+        <h3>Select Time Range</h3>
+        <div id="timeselect">
+            Start:
+            <input type="text" class="datefield" id="startdate" onchange="changedTimes = true; updatePlotMessage();"></input>
+            &nbsp&nbspEnd:
+            <input type="text" class="datefield" id="enddate" onchange="changedTimes = true; updatePlotMessage();"></input>
+            <button onclick="$('#enddate').val(dateConverter.format(new Date())).change();">Now</button>
+            &nbsp&nbspTimezone:
+            <select id="timezoneSelect" onchange="var visibility = (this[this.selectedIndex].value == 'OTHER' ? 'visible' : 'hidden');
+                document.getElementById('otherTimezone').style.visibility = visibility;
+                changedTimes = true;
+                updatePlotMessage();">
+                <option value="America/Los_Angeles">America/Los_Angeles</option>
+                <option value="UTC">UTC</option>
+                <option value="OTHER">Other:</option>
+            </select>
+            <input type="text" id="otherTimezone" style="visibility: hidden;"></input>
+        </div>
+        <h3>Select Streams</h3>
+        <button onclick="updateStreamList();">Refresh Stream Tree</button>
+        <span id="streamLoading"></span> <!-- Displays details about how the streams are loading -->
+        <div id="streamTree"></div>
+    </body>
+</html>
