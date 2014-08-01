@@ -1,0 +1,3 @@
+Image obtained from
+http://www.google.com/intl/en_ALL/mapfiles/openhand.cur
+http://www.google.com/intl/en_ALL/mapfiles/closedhand.cur

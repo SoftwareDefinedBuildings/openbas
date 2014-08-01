@@ -7,49 +7,51 @@ function Axis (id) {
     this.units = {};
     this.autoscale = true;
     this.manualscale = [-1, 1];
+    this.right = false; // true if this axis is to be displayed on the right side of the graph
 }
 
-/* These three variables are maintained with every operation. */
-var yAxes = []; // Stores a list of axis objects
-var numAxes = 0; // The number of times "Add a Y-Axis" has been clicked plus 1, NOT the number of axes
-var axisMap = {}; // Maps the id of an axis to its axis object
+function init_axis(self) {
+    /* These three variables are maintained with every operation. */
+    self.idata.yAxes = []; // Stores a list of axis objects
+    self.idata.numAxes = 0; // The number of times "Add a Y-Axis" has been clicked plus 1, NOT the number of axes
+    self.idata.axisMap = {}; // Maps the id of an axis to its axis object
+}
 
 /* Move STREAM from one axis to another. If FROMAXISID or TOAXISID is null,
    STREAM is simply removed from FROMAXISID or added to TOAXISID.
    This updates the "Axes" box, but not the select menu in the "Legend" box. */
-function changeAxis(stream, fromAxisID, toAxisID, updateGraph) {
+function changeAxis(self, stream, fromAxisID, toAxisID, updateGraph) {
     var unit = stream.Properties.UnitofMeasure;
     if (fromAxisID != null) {
-        var streamList = axisMap[fromAxisID].streams;
+        var streamList = self.idata.axisMap[fromAxisID].streams;
         for (var i = 0; i < streamList.length; i++) {
             if (streamList[i] == stream) {
                 streamList.splice(i, 1);
                 break;
             }
         }
-        axisMap[fromAxisID].units[unit]--;
-        updateYAxis(fromAxisID);
+        self.idata.axisMap[fromAxisID].units[unit]--;
+        updateYAxis(self, fromAxisID);
     }
     if (toAxisID != null) {
-        axisMap[toAxisID].streams.push(stream);
-        var unitDict = axisMap[toAxisID].units;
+        self.idata.axisMap[toAxisID].streams.push(stream);
+        var unitDict = self.idata.axisMap[toAxisID].units;
         if (unitDict.hasOwnProperty(unit)) {
             unitDict[unit]++;
         } else {
             unitDict[unit] = 1;
         }
-        streamSettings[stream.uuid].axisid = toAxisID;
-        updateYAxis(toAxisID);
+        self.idata.streamSettings[stream.uuid].axisid = toAxisID;
+        updateYAxis(self, toAxisID);
     }
 }
 
 /* Create a new y-axis, updating the variables and the screen as necessary. */
-function addYAxis() {
-    numAxes++;
-    var id = "y" + numAxes;
+function addYAxis(self) {
+    var id = "y" + (++self.idata.numAxes);
     var axisObj = new Axis(id);
-    yAxes.push(axisObj);
-    axisMap[id] = axisObj;
+    self.idata.yAxes.push(axisObj);
+    self.idata.axisMap[id] = axisObj;
     var row = d3.select("tbody#axes")
       .append("tr")
         .attr("class", "axissetting")
@@ -61,8 +63,8 @@ function addYAxis() {
         .attr("value", id)
         .node().onchange = function () {
                 axisObj.axisname = this.value;
-                $("option.option-" + axisObj.axisid).html(this.value);
-                $("text#axistitle-" + axisObj.axisid).html(this.value);
+                self.$("option.option-" + axisObj.axisid).html(this.value);
+                self.$("text#axistitle-" + axisObj.axisid).html(this.value);
             };
     row.append("td")
         .attr("class", "axisstreams");
@@ -81,7 +83,7 @@ function addYAxis() {
         .attr("class", "axisrange")
         .node().onchange = function () {
                 axisObj.manualscale[0] = parseFloat(this.value.trim());
-                applySettings();
+                s3ui.applySettings(self);
             };
     selectElem.append("span")
         .text(" to ");
@@ -90,7 +92,7 @@ function addYAxis() {
         .attr("class", "axisrange")
         .node().onchange = function () {
                 axisObj.manualscale[1] = parseFloat(this.value.trim());
-                applySettings();
+                s3ui.applySettings(self);
             };
         
     var rangeElem = row.append("td");
@@ -117,8 +119,31 @@ function addYAxis() {
         .html("Remove")
         .attr("class", "removebutton")
         .node().onclick = function () {
-                removeYAxis(axisObj);
+                removeYAxis(self, axisObj);
             };
+            
+    var sideElem = row.append("td");
+    var div = sideElem.append("div");
+    div.append("input")
+        .attr("type", "radio")
+        .attr("name", "side-" + id)
+        .attr("checked", true)
+        .node().onclick = function () {
+                axisObj.right = false;
+                applySettings();
+            };
+    div.append("span")
+        .html("Left");
+    div = sideElem.append("div");
+    div.append("input")
+        .attr("type", "radio")
+        .attr("name", "side-" + id)
+        .node().onclick = function () {
+                axisObj.right = true;
+                s3ui.applySettings(self);
+            };
+    div.append("span")
+        .html("Right");
     d3.selectAll("select.axis-select")
       .append("option")
         .attr("class", "option-" + axisObj.axisid)
@@ -127,18 +152,19 @@ function addYAxis() {
 }
 
 /* Delete the y-axis specified by the Axis object AXIS. */
-function removeYAxis(axis) {
+function removeYAxis(self, axis) {
     var streamList = axis.streams;
     var i;
     var selectbox;
     var mustUpdate = (streamList.length > 0);
     for (i = streamList.length - 1; i >= 0; i--) {
-        selectbox = document.getElementById("axis-select-" + streamList[i].uuid);
+        selectbox = self.find("#axis-select-" + streamList[i].uuid);
         selectbox.selectedIndex = 0;
         selectbox.onchange(null, true); // We update the graph ONCE at the end, not after each stream is moved
     }
-    updateYAxis("y1");
-    delete axisMap[axis.axisid];
+    updateYAxis(self, "y1");
+    delete self.idata.axisMap[axis.axisid];
+    var yAxes = self.idata.yAxes;
     for (i = 0; i < yAxes.length; i++) {
         if (yAxes[i] == axis) {
             yAxes.splice(i, 1);
@@ -146,19 +172,19 @@ function removeYAxis(axis) {
         }
     }
     if (mustUpdate) {
-        applySettings();
+        s3ui.applySettings(self);
     }
-    $("tr#axis-" + axis.axisid).remove();
-    $("option.option-" + axis.axisid).remove();
+    self.$("tr#axis-" + axis.axisid).remove();
+    self.$("option.option-" + axis.axisid).remove();
 }
 
 /* Update the list of streams and units for the axis specified by the ID
    AXISID. */
-function updateYAxis (axisid) {
+function updateYAxis (self, axisid) {
     var rowSelection = d3.select("tr#axis-" + axisid);
     var streamUpdate = rowSelection.select("td.axisstreams")
       .selectAll("div")
-      .data(axisMap[axisid].streams);
+      .data(self.idata.axisMap[axisid].streams);
     streamUpdate.enter()
       .append("div");
     streamUpdate
@@ -168,7 +194,7 @@ function updateYAxis (axisid) {
     rowSelection.select("td.axisunits")
         .each(function () {
                 var unitList = [];
-                var units = axisMap[axisid].units;
+                var units = self.idata.axisMap[axisid].units;
                 for (unit in units) {
                     if (units.hasOwnProperty(unit) && units[unit] > 0) {
                         unitList.push(unit);
@@ -186,10 +212,11 @@ function updateYAxis (axisid) {
    If this is not possible, it searches for an axis with no streams assigned
    to it.
    If that is not possible either, it returns undefined. */
-function guessYAxis (stream) {
+function guessYAxis(self, stream) {
     var axis;
     var unit = stream.Properties.UnitofMeasure;
     var backupIndex;
+    var yAxes = self.idata.yAxes;
     for (var i = 0; i < yAxes.length; i++) {
         axisUnits = yAxes[i].units;
         if (axisUnits.hasOwnProperty(unit) && axisUnits[unit] > 0) {
@@ -200,3 +227,10 @@ function guessYAxis (stream) {
     }
     return backupIndex;
 }
+
+s3ui.init_axis = init_axis;
+s3ui.changeAxis = changeAxis;
+s3ui.addYAxis = addYAxis;
+s3ui.removeYAxis = removeYAxis;
+s3ui.updateYAxis = updateYAxis;
+s3ui.guessYAxis = guessYAxis;
