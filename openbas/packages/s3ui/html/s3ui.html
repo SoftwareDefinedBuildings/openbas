@@ -69,6 +69,10 @@
         g.tick text {
             font-size: 16px;
         }
+        
+        g#data-density-axis text {
+            font-size: 14px;
+        }
     </style>
 
     <!-- This is where <body> started in the original HTML document. -->
@@ -80,8 +84,8 @@
         <tr>
             <td>
                 <!-- Chart is built in this SVG element by the initPlot() function -->
-                <svg id="chart" width="800" height="420" background="white">
-                    <rect width="800" height="420" fill="white"></rect> <!-- So the background is white, not transparent. -->
+                <svg id="chart" width="800" height="430" background="white">
+                    <rect width="800" height="430" fill="white"></rect> <!-- So the background is white, not transparent. -->
                     <g id="plotDirections" transform="translate(50, 100)">
                         <text transform="translate(0, 0)">1. Select streams from the list below.</text>
                         <text transform="translate(0, 30)">2. Select a time range to load data.</text>

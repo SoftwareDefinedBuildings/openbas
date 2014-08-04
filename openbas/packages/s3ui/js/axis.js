@@ -104,7 +104,7 @@ function addYAxis(self) {
                 axisObj.autoscale = this.checked;
                 if (this.checked) {
                    thisRow.parentNode.removeChild(thisRow.nextSibling);
-                   applySettings();
+                   s3ui.applySettings(self);
                 } else {
                     thisRow.parentNode.insertBefore(rangeRow, thisRow.nextSibling);
                     var fields = selectElem.node().getElementsByClassName("axisrange");
@@ -129,8 +129,10 @@ function addYAxis(self) {
         .attr("name", "side-" + id)
         .attr("checked", true)
         .node().onclick = function () {
-                axisObj.right = false;
-                applySettings();
+                if (axisObj.right) {
+                    axisObj.right = false;
+                    applySettings();
+                }
             };
     div.append("span")
         .html("Left");
@@ -139,8 +141,10 @@ function addYAxis(self) {
         .attr("type", "radio")
         .attr("name", "side-" + id)
         .node().onclick = function () {
-                axisObj.right = true;
-                s3ui.applySettings(self);
+                if (!axisObj.right) {
+                    axisObj.right = true;
+                    s3ui.applySettings(self);
+                }
             };
     div.append("span")
         .html("Right");
@@ -149,6 +153,7 @@ function addYAxis(self) {
         .attr("class", "option-" + axisObj.axisid)
         .attr("value", axisObj.axisid)
         .html(axisObj.axisname);
+    return id;
 }
 
 /* Delete the y-axis specified by the Axis object AXIS. */

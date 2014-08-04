@@ -44,6 +44,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
             args = self.query[qIndex+1:]
             kvpairs = map(lambda x: x.split('='), args.split('&'))
             kwargs = {pair[0]: pair[1] for pair in kvpairs}
+            kwargs['hole'] = 'fake-data2' in self.query
             data = string.replace(str(get_smapx_data(**kwargs)).translate(None, 'L'), "'", '"')
             self.wfile.write(data)
             print 'Sent response'
@@ -55,7 +56,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 data = f.read();
                 prefix = data[:-1] + ', '
             if ('/backend/api/tags' in self.query):
-                data = prefix + '{"Path": "/tests/Data Range Test", "Metadata": {"SourceName": "Fake Data", "Instrument": {"ModelName": "A Python Program"}}, "uuid": "fake-data", "Properties": {"UnitofTime": "ns", "Timezone": "UTC", "UnitofMeasure": "N", "ReadingType": "long"}}, {"Path": "/tests/Data Range Test 2", "Metadata": {"SourceName": "Fake Data", "Instrument": {"ModelName": "A Python Program"}}, "uuid": "fake-data2", "Properties": {"UnitofTime": "ns", "Timezone": "America/Phoenix", "UnitofMeasure": "N", "ReadingType": "long"}}]'
+                data = prefix + '{"Path": "/tests/Data Range Test", "Metadata": {"SourceName": "Fake Data", "Instrument": {"ModelName": "A Python Program"}}, "uuid": "fake-data", "Properties": {"UnitofTime": "ns", "Timezone": "America/Phoenix", "UnitofMeasure": "N", "ReadingType": "long"}}, {"Path": "/tests/Data Range Test 2", "Metadata": {"SourceName": "Fake Data", "Instrument": {"ModelName": "A Python Program"}}, "uuid": "fake-data2", "Properties": {"UnitofTime": "ns", "Timezone": "UTC", "UnitofMeasure": "N", "ReadingType": "long"}}]'
             self.wfile.write(data)
             print 'Sent response'
             if not local:

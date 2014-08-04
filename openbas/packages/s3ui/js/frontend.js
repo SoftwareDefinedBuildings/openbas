@@ -6,7 +6,8 @@ function init_frontend(self) {
     self.idata.makeColorMenu = s3ui.makeMenuMaker();
     self.idata.streamSettings = {}; // Stores the stream settings chosen in the legend (maps uuid to a setting object)
     self.idata.selectedStreamsBuffer = self.idata.selectedStreams; // Streams that have been selected and are displayed in the legend
-    self.idata.streamMessages = {}; // Maps a stream's uuid to a 2-element array containing 1) the message to display beside it in the legend and 2) whether a special message is currently being displayed
+    self.idata.streamMessages = {}; // Maps a stream's uuid to a 2-element array containing 1) an object mapping importances (ints) to messages and 2) the importance of the current message being displayed
+
     self.idata.addedStreams = undefined;
     self.idata.changedTimes = undefined;
     self.idata.otherChange = undefined;
@@ -54,22 +55,6 @@ function updateStreamList(self) {
         }, "text");
 }
 
-function showInfo (datum, button, parent) {
-    var description = document.createElement("tr");
-    description.appendChild(document.createElement("td"));
-    description.appendChild(document.createElement("td"));
-    description.lastChild.innerHTML = getInfo(datum);
-    parent.parentNode.insertBefore(description, parent.nextSibling);
-    button.innerHTML = 'Hide Details';
-    button.onclick = function () { hideInfo(this, this.parentNode.parentNode); };
-}
-
-function hideInfo (button, parent) {
-    parent.parentNode.removeChild(parent.nextSibling);
-    button.innerHTML = 'Show Details';
-    button.onclick = function () { showInfo(this.__data__, this, this.parentNode.parentNode); };
-}
-
 /* Adds or removes (depending on the value of SHOW) the stream
 described by STREAMDATA to or from the legend. */
 function toggleLegend (self, show, streamdata, update) {
@@ -94,7 +79,7 @@ function toggleLegend (self, show, streamdata, update) {
                   self.idata.streamSettings[streamdata.uuid].color = newColor;
               };
         self.idata.streamSettings[streamdata.uuid] = { color: colorMenu[colorMenu.selectedIndex].value, axisid: "y1" }; // axisid is changed
-        self.idata.streamMessages[streamdata.uuid] = ["", false];
+        self.idata.streamMessages[streamdata.uuid] = [{0: ""}, 0];
         var nameElem = row.append("td")
             .html(function (d) { return s3ui.getFilepath(d); })
           .node();
@@ -103,15 +88,13 @@ function toggleLegend (self, show, streamdata, update) {
                     self.$("g#series-" + streamdata.uuid).attr({"stroke-width": 3, "fill-opacity": 0.5});
                     var xdomain = self.idata.oldXScale.domain();
                     var currPWE = s3ui.getPWExponent((xdomain[1] - xdomain[0]) / self.idata.WIDTH);
-                    intervalWidth.innerHTML = "Interval width: " + s3ui.nanosToUnit(Math.pow(2, currPWE));
-                    self.idata.streamMessages[streamdata.uuid][1] = true;
+                    setStreamMessage(self, streamdata.uuid, "Interval width: " + s3ui.nanosToUnit(Math.pow(2, currPWE)), 2);
                     s3ui.showDataDensity(self, streamdata.uuid);
                 }
             };
         nameElem.onmouseout = function () {
                 self.$("g#series-" + streamdata.uuid).attr({"stroke-width": 1, "fill-opacity": 0.3});
-                intervalWidth.innerHTML = self.idata.streamMessages[streamdata.uuid][0];
-                self.idata.streamMessages[streamdata.uuid][1] = false;
+                setStreamMessage(self, streamdata.uuid, undefined, 2);
                 s3ui.hideDataDensity(self);
             };
         var selectElem = row.append("td")
@@ -166,12 +149,22 @@ function toggleLegend (self, show, streamdata, update) {
     }
 }
 
-/* Sets the message to be displayed when a special message is not
-   being displayed. */
-function setStreamMessage(self, uuid, message) {
-    self.idata.streamMessages[uuid][0] = message;
-    if (!self.idata.streamMessages[uuid][1]) {
-        self.$("#message-" + uuid).html(message);
+/* Sets the message to be displayed for a certain importance; the message with
+   the highest importanced is displayed. */
+function setStreamMessage(self, uuid, message, importance) {
+    var messages = self.idata.streamMessages[uuid];
+    messages[0][importance] = message;
+    if (message == undefined) {
+        if (importance == messages[1]) {
+            while (messages[0][importance] == undefined) {
+                importance--;
+            }
+            messages[1] = importance;
+            self.find("#message-" + uuid).innerHTML = messages[0][importance];
+        }
+    } else if (importance >= messages[1]) {
+        messages[1] = importance;
+        self.find("#message-" + uuid).innerHTML = message;
     }
 }
 

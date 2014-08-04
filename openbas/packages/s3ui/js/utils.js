@@ -125,6 +125,7 @@ function listToTree(streamList) {
                 currNodes = childNode.children;
                 currCache = childNode.childCache;
                 if (j == hierarchy.length - 1) {
+                    childNode.id = streamObj.uuid;
                     childNode.icon = false;
                     childNode.data.selected = false;
                     childNode.data.streamdata = streamObj;

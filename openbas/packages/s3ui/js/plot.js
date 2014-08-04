@@ -8,7 +8,7 @@ function init_plot(self) {
     self.idata.HEIGHT = 300;
 
     // Margin size (not constant)
-    self.idata.margin = {left: 100, right: 100, top: 60, bottom: 60};
+    self.idata.margin = {left: 100, right: 100, top: 70, bottom: 60};
 
     // Selection of the element to display progress
     self.idata.loadingElem = self.$('#plotLoading');
@@ -74,7 +74,7 @@ function cacheData(self, uuid, drawID, pwe, startTime, endTime) {
                     if (drawID != self.idata.drawRequestID || pwe == 1) {
                         return;
                     }
-                    s3ui.ensureData(self, uuid, pwe - 2, startTime - sideCache, endTime + sideCache, function () { s3ui.setStreamMessage(self, uuid, ""); });
+                    s3ui.ensureData(self, uuid, pwe - 2, startTime - sideCache, endTime + sideCache, function () { s3ui.setStreamMessage(self, uuid, undefined, 1); });
                 });
             });
         });
@@ -95,14 +95,15 @@ function repaintZoomNewData(self, callback, stopCache) {
                 return;
             }
             s3ui.limitMemory(self, selectedStreams, self.idata.oldOffsets, domain[0], domain[1], 300000 * selectedStreams.length, 150000 * selectedStreams.length);
-            self.idata.oldData[stream.uuid] = [stream, data];
+            self.idata.oldData[stream.uuid] = [stream, data, pwe];
             numResponses++;
+            if (!stopCache) {
+                s3ui.setStreamMessage(self, stream.uuid, undefined, 5);
+                s3ui.setStreamMessage(self, stream.uuid, "Caching data...", 1);
+                setTimeout(function () { cacheData(self, stream.uuid, thisID, pwe, startTime, endTime); }, 0); // do it asynchronously
+            }
             if (numResponses == selectedStreams.length) {
                 callback();
-            }
-            if (!stopCache) {
-                s3ui.setStreamMessage(self, stream.uuid, "Caching data...");
-                cacheData(self, stream.uuid, thisID, pwe, startTime, endTime);
             }
         };
     }
@@ -112,7 +113,7 @@ function repaintZoomNewData(self, callback, stopCache) {
         self.idata.drawRequestID = -1;
     }
     for (var i = 0; i < selectedStreams.length; i++) {
-        s3ui.setStreamMessage(self, selectedStreams[i].uuid, "Fetching data...");
+        s3ui.setStreamMessage(self, selectedStreams[i].uuid, "Fetching data...", 5);
         s3ui.ensureData(self, selectedStreams[i].uuid, pwe, domain[0] - self.idata.oldOffsets[i], domain[1] - self.idata.oldOffsets[i], makeDataCallback(selectedStreams[i], domain[0] - self.idata.oldOffsets[i], domain[1] - self.idata.oldOffsets[i]));
     }
     if (selectedStreams.length == 0) {
@@ -194,7 +195,7 @@ function initPlot(self) {
         .attr("transform", "translate(0, " + self.idata.margin.top + ")")
         .attr("id", "y-axes");
     datadensitycover.append("g")
-        .attr("transform", "translate(0, 15)")
+        .attr("transform", "translate(0, 10)")
         .attr("id", "data-density-plot")
       .append("g")
         .attr("id", "data-density-axis");
@@ -552,10 +553,15 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
     var scaledX;
     var startIndex;
     var domain = xScale.domain();
-    var startTime;
+    var startTime, endTime;
     var xPixel;
     var lastIteration;
     var color;
+    var mint, maxt;
+    var inRange;
+    var WIDTH = self.idata.WIDTH;
+    var HEIGHT = self.idata.HEIGHT;
+    var pixelw = (domain[1] - domain[0]) / WIDTH * 1000000; // pixel width in nanoseconds
 
     for (i = 0; i < streams.length; i++) {
         currXPixel = -Infinity;
@@ -571,20 +577,32 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
         maxval = [];
         yScale = axisData[streamSettings[streams[i].uuid].axisid][2];
         startTime = domain[0].getTime() - offsets[i];
-        startIndex = s3ui.binSearch(streamdata, startTime - 1000, function (point) { return point[0]; });
-        if (startIndex > 0 && streamdata[startIndex][0] > startTime - 1000) {
+        endTime = domain[1].getTime() - offsets[i];
+        startIndex = s3ui.binSearch(streamdata, startTime - 1, function (point) { return point[0]; });
+        if (startIndex > 0 && streamdata[startIndex][0] > startTime - 1) {
             startIndex--; // plot the previous datapoint so the graph looks continuous (subtract 1000 in case nanoseconds push it into graph)
         }
+        if (streamdata.length == 0 || streamdata[Math.min(streamdata.length - 1, startIndex + 1)][0] > endTime) {
+            s3ui.setStreamMessage(self, streams[i].uuid, "No data in specified time range", 4);
+        } else {
+            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 4);
+        }
         lastIteration = false;
+        inRange = false;
         for (j = startIndex; j < streamdata.length; j++) {
             xPixel = xScale(streamdata[j][0] + offsets[i]);
             // correct for nanoseconds
-            xPixel += (streamdata[j][1] / (domain[1] - domain[0]) * self.idata.WIDTH) * 0.000001;
-            minval.push(xPixel + "," + yScale(streamdata[j][2]));
+            xPixel += (streamdata[j][1] / pixelw);
+            mint = yScale(streamdata[j][2]);
+            minval.push(xPixel + "," + mint);
             q1.push(xPixel + "," + yScale(streamdata[j][3]));
             median.push(xPixel + "," + yScale(streamdata[j][4]));
             q3.push(xPixel + "," + yScale(streamdata[j][5]));
-            maxval.push(xPixel + "," + yScale(streamdata[j][6]));
+            maxt = yScale(streamdata[j][6]);
+            maxval.push(xPixel + "," + maxt);
+            if (!inRange && xPixel >= 0 && xPixel <= WIDTH) {
+                inRange = (mint > 0 && mint < HEIGHT) || (maxt > 0 && maxt < HEIGHT) || (mint >= HEIGHT && maxt <= 0);
+            }
             if (lastIteration) {
                 break;
             }
@@ -599,8 +617,12 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
         maxval = maxval.join(" ") + " " + minval.join(" ");
         color = streamSettings[streams[i].uuid].color;
         dataArray.push({color: color, data: [maxval, q3, median], uuid: streams[i].uuid});
-    }
-    
+        if (inRange) {
+            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 3);
+        } else {
+            s3ui.setStreamMessage(self, streams[i].uuid, "Data outside axis range; try rescaling y-axis", 3);
+        }
+    }    
     update = d3.select("g#chartarea")
       .selectAll("g")
       .data(dataArray);
@@ -642,7 +664,8 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
     }
     
     if (self.idata.showingDensity != undefined) {
-        showDataDensity(self.idata.showingDensity);
+        self.$("svg#chart g#data-density-plot polyline").remove();
+        showDataDensity(self, self.idata.showingDensity);
     }
 }
 
@@ -660,58 +683,109 @@ function showDataDensity(self, uuid) {
             break;
         }
     }
-    var startTime = domain[0].getTime() - self.idata.oldOffsets[j];
-    var startIndex = s3ui.binSearch(streamdata, startTime, function (point) { return point[0]; });
-    var totalmin = undefined;
-    var totalmax = undefined;
+    var WIDTH = self.idata.WIDTH;
+    var pixelw = (domain[1] - domain[0]) / WIDTH;
+    var pw = Math.pow(2, self.idata.oldData[uuid][2]);
+    pixelw *= 1000000;
+    var oldOffsets = self.idata.oldOffsets;
+    var startTime = domain[0].getTime() - oldOffsets[j];
+    var totalmax;
     var xPixel;
-    var toDraw = [];
-    for (var i = startIndex; i < streamdata.length; i++) {
-        xPixel = self.idata.oldXScale(streamdata[i][0] + self.idata.oldOffsets[j]);
-        xPixel += (streamdata[i][1] / (domain[1] - domain[0]) * self.idata.WIDTH) * 0.000001
-        if (xPixel > self.idata.WIDTH) {
-            break;
+    var prevIntervalEnd;
+    var toDraw = [[0, 0]];
+    var lastiteration;
+    var startIndex;
+    var oldXScale = self.idata.oldXScale;
+    if (streamdata.length == 0) {
+        toDraw.push([WIDTH, 0]);
+        totalmax = 0;
+    } else {    
+        startIndex = s3ui.binSearch(streamdata, startTime, function (point) { return point[0]; });
+        if (startIndex > 0 && streamdata[startIndex][0] > startTime) {
+            startIndex--;
         }
-        toDraw.push([xPixel, streamdata[i][7]]);
-        if (!(streamdata[i][7] <= totalmax)) {
-            totalmax = streamdata[i][7];
+        totalmax = streamdata[startIndex][7];
+        lastiteration = false;
+        for (var i = startIndex; i < streamdata.length; i++) {
+            xPixel = oldXScale(streamdata[i][0] + oldOffsets[j]);
+            xPixel += ((streamdata[i][1] - pw/2) / pixelw);
+            if (xPixel < 0) {
+                xPixel = 0;
+            }
+            if (xPixel > WIDTH) {
+                xPixel = WIDTH;
+                lastiteration = true;
+            }
+            if (i == 0 || ((streamdata[i][0] - streamdata[i - 1][0]) * 1000000) + streamdata[i][1] - streamdata[i - 1][1] <= pw) {
+                toDraw.push([xPixel, toDraw[toDraw.length - 1][1]]);
+            } else {
+                prevIntervalEnd = Math.max(0, oldXScale(streamdata[i - 1][0] + oldOffsets[j]) + ((streamdata[i - 1][1] + (pw/2)) / pixelw));
+                if (prevIntervalEnd != 0) {
+                    if (i == startIndex) {
+                        toDraw.pop();
+                    }
+                    toDraw.push([prevIntervalEnd, streamdata[i - 1][7]]);
+                }
+                toDraw.push([prevIntervalEnd, 0]);
+                toDraw.push([xPixel, 0]);
+            }
+            if (!lastiteration) {
+                toDraw.push([xPixel, streamdata[i][7]]);
+            }
+            if (!(streamdata[i][7] <= totalmax)) {
+                totalmax = streamdata[i][7];
+            }
+            if (lastiteration) {
+                break;
+            }
         }
-        if (!(streamdata[i][7] >= totalmin)) {
-            totalmin = streamdata[i][7];
+        if (!lastiteration) {
+            toDraw.push([toDraw[toDraw.length - 1][0], 0]);
+            toDraw.push([WIDTH, 0]);
         }
     }
+    
     var yScale;
-    if (totalmin == undefined) {
-        return; // no points
-    } else {
-        if (totalmin == totalmax) {
-            totalmin--;
-            totalmax++;
+    if (totalmax == 0) {
+        totalmax = 1;
+    }
+    yScale = d3.scale.log().base(2).domain([0.5, totalmax]).range([45, 0]);
+    j = 0;
+    while (j < toDraw.length) {
+        if (toDraw[j][0] == 0 && j > 0) {
+            toDraw.shift(); // Only draw one point at x = 0; there may be more in the array
+            j--;
+            continue;
+        } else {
+            if (toDraw[j][1] == 0) {
+                // To plot a density of 0, I'm putting 0.5 into the data so the log scale will work; 
+                toDraw[j][1] = yScale(0.5);
+            } else {
+                toDraw[j][1] = yScale(toDraw[j][1]);
+            }
         }
-        yScale = d3.scale.linear().domain([totalmin, totalmax]).range([40, 0]);
+        j++;
     }
-    for (j = 0; j < toDraw.length; j++) {
-        toDraw[j][1] = yScale(toDraw[j][1]);
-    }
-    var ddplot = d3.select("svg#chart g#data-density-plot")
-    var update = ddplot.selectAll("circle")
-      .data(toDraw);
-    update.enter()
-      .append("circle")
-        .attr("r", 1)
-        .attr("stroke", "none");
-    update
-        .attr("fill", self.idata.streamSettings[uuid].color)
-        .attr("cx", function (d) { return d[0]; })
-        .attr("cy", function (d) { return d[1]; });
-    update.exit().remove();
+    var ddplot = d3.select("svg#chart g#data-density-plot");
+    ddplot.append("polyline")
+        .attr("points", toDraw.join(" "))
+        .attr("fill", "none")
+        .attr("stroke", self.idata.streamSettings[uuid].color);
+        
+    var formatter = d3.format("d");
     
     ddplot.select("g#data-density-axis")
-        .call(d3.svg.axis().scale(yScale).orient("left").tickValues([totalmin, totalmax]).tickFormat(d3.format("d")));
+        .call(d3.svg.axis().scale(yScale).orient("left").tickValues([0.5, Math.round(Math.sqrt(totalmax)), totalmax])
+        .tickFormat(function (d) {
+                if (d < 1) {
+                    d = Math.floor(d);
+                }
+                return formatter(d);
+            }));
 }
 
 function hideDataDensity(self) {
-    self.$("svg#chart g#data-density-plot circle").remove();
+    self.$("svg#chart g#data-density-plot polyline").remove();
     self.$("svg#chart g#data-density-plot g#data-density-axis").empty();
     self.idata.showingDensity = undefined;
 }

@@ -1,12 +1,16 @@
-s3ui = {}; // stores functions used in multiple files
+s3ui = {instances: []}; // stores functions used in multiple files
 
 Template.s3plot.rendered = function () {
         var self = this;
+        s3ui.instances.push(self);
         self.idata = {}; // an object to store instance data
+        self.imethods = {}; // an object to store instance methods
         s3ui.init_axis(self);
         s3ui.init_plot(self);
         s3ui.init_data(self);
         s3ui.init_frontend(self);
+        s3ui.init_control(self);
+        
         // Event handlers are added programmatically
         self.find("#makeGraph").onclick = function () {
                 self.find("#download-graph").innerHTML = 'Creating image...';

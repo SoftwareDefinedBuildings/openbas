@@ -23,6 +23,7 @@ Package.on_use(function (api) {
   api.add_files(path.join(asset_path, 'js', 'utils.js'), 'client');
   api.add_files(path.join(asset_path, 'js', 'plot.js'), 'client');
   api.add_files(path.join(asset_path, 'js', 'frontend.js'), 'client');
+  api.add_files(path.join(asset_path, 'js', 'control.js'), 'client');
   
   api.export('s3ui');
 });

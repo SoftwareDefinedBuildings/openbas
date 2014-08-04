@@ -19,8 +19,7 @@ def f(t):
     t = float(t) #Add scale here if required
     return 100*math.sin(t/100.0) + 10*math.sin(t/10.0) + 5*math.sin(t) + math.sin(10*t)
 
-# resolution is (endtime - starttime) / num
-def get_smapx_data(starttime, endtime, unit, pw):
+def get_smapx_data(starttime, endtime, unit, pw, hole):
     #Validate inputs
     if unit != "ns":
         raise SMAPXexception("invalid unit of time")
@@ -40,8 +39,15 @@ def get_smapx_data(starttime, endtime, unit, pw):
     rv = []
     ival = 2 ** pw
     i = starttime
-    k = starttime
+    if hole:
+        i = max(i, 1401219680000)
+    k = i
     while i < endtime:
+        if hole and ((i / 1000000000) % 60 == 0):
+            i += ival
+            while k < (i + ival):
+                k += 1000000
+            continue
         # We are imitating final data structure
         # max, min, mean, count
         krv = []
