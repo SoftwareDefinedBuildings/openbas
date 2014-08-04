@@ -52,10 +52,9 @@ function addYAxis(self) {
     var axisObj = new Axis(id);
     self.idata.yAxes.push(axisObj);
     self.idata.axisMap[id] = axisObj;
-    var row = d3.select("tbody#axes")
+    var row = d3.select(self.find("tbody.axes"))
       .append("tr")
-        .attr("class", "axissetting")
-        .attr("id", "axis-" + id);
+        .attr("class", "axissetting axis-" + id);
     row.append("td")
       .append("input")
         .attr("type", "text")
@@ -64,7 +63,7 @@ function addYAxis(self) {
         .node().onchange = function () {
                 axisObj.axisname = this.value;
                 self.$("option.option-" + axisObj.axisid).html(this.value);
-                self.$("text#axistitle-" + axisObj.axisid).html(this.value);
+                self.$("text.axistitle-" + axisObj.axisid).html(this.value);
             };
     row.append("td")
         .attr("class", "axisstreams");
@@ -126,12 +125,12 @@ function addYAxis(self) {
     var div = sideElem.append("div");
     div.append("input")
         .attr("type", "radio")
-        .attr("name", "side-" + id)
+        .attr("name", "side-" + id + "i" + self.idata.instanceid)
         .attr("checked", true)
         .node().onclick = function () {
                 if (axisObj.right) {
                     axisObj.right = false;
-                    applySettings();
+                    s3ui.applySettings(self);
                 }
             };
     div.append("span")
@@ -139,7 +138,7 @@ function addYAxis(self) {
     div = sideElem.append("div");
     div.append("input")
         .attr("type", "radio")
-        .attr("name", "side-" + id)
+        .attr("name", "side-" + id + "i" + self.idata.instanceid)
         .node().onclick = function () {
                 if (!axisObj.right) {
                     axisObj.right = true;
@@ -148,7 +147,7 @@ function addYAxis(self) {
             };
     div.append("span")
         .html("Right");
-    d3.selectAll("select.axis-select")
+    d3.selectAll(self.$("select.axis-select"))
       .append("option")
         .attr("class", "option-" + axisObj.axisid)
         .attr("value", axisObj.axisid)
@@ -163,7 +162,7 @@ function removeYAxis(self, axis) {
     var selectbox;
     var mustUpdate = (streamList.length > 0);
     for (i = streamList.length - 1; i >= 0; i--) {
-        selectbox = self.find("#axis-select-" + streamList[i].uuid);
+        selectbox = self.find(".axis-select-" + streamList[i].uuid);
         selectbox.selectedIndex = 0;
         selectbox.onchange(null, true); // We update the graph ONCE at the end, not after each stream is moved
     }
@@ -179,14 +178,14 @@ function removeYAxis(self, axis) {
     if (mustUpdate) {
         s3ui.applySettings(self);
     }
-    self.$("tr#axis-" + axis.axisid).remove();
+    self.$("tr.axis-" + axis.axisid).remove();
     self.$("option.option-" + axis.axisid).remove();
 }
 
 /* Update the list of streams and units for the axis specified by the ID
    AXISID. */
 function updateYAxis (self, axisid) {
-    var rowSelection = d3.select("tr#axis-" + axisid);
+    var rowSelection = d3.select(self.find("tr.axis-" + axisid));
     var streamUpdate = rowSelection.select("td.axisstreams")
       .selectAll("div")
       .data(self.idata.axisMap[axisid].streams);

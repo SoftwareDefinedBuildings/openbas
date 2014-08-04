@@ -11,7 +11,7 @@ function init_plot(self) {
     self.idata.margin = {left: 100, right: 100, top: 70, bottom: 60};
 
     // Selection of the element to display progress
-    self.idata.loadingElem = self.$('#plotLoading');
+    self.idata.loadingElem = self.$('.plotLoading');
 
     // Parameters of the last update
     self.idata.oldStartDate = undefined;
@@ -51,7 +51,7 @@ function init_plot(self) {
 
 // Behavior for zooming and scrolling
 function repaintZoom(self) {
-    d3.select("g#x-axis").call(self.idata.oldXAxis);
+    d3.select(self.find("g.x-axis")).call(self.idata.oldXAxis);
     drawStreams(self, self.idata.oldData, self.idata.selectedStreams, self.idata.streamSettings, self.idata.oldXScale, self.idata.oldYScales, self.idata.oldYAxisArray, self.idata.oldAxisData, self.idata.oldOffsets, self.idata.loadingElem, true);
 }
 
@@ -122,46 +122,44 @@ function repaintZoomNewData(self, callback, stopCache) {
 }
 
 function initPlot(self) {
-    var chart = d3.select("svg#chart");
+    var chart = d3.select(self.find("svg.chart"));
     $(chart.node()).empty(); // Remove directions from inside the chart
     chart.attr("width", self.idata.margin.left + self.idata.WIDTH + self.idata.margin.right)
         .attr("height", self.idata.margin.top + self.idata.HEIGHT + self.idata.margin.bottom)
       .append("rect")
-        .attr("id", "background-rect")
+        .attr("class", "background-rect")
         .attr("fill", "white")
         .attr("width", self.idata.margin.left + self.idata.WIDTH + self.idata.margin.right)
         .attr("height", self.idata.margin.top + self.idata.HEIGHT + self.idata.margin.bottom)
     var chartarea = chart.append("g")
-        .attr("id", "chartarea")
+        .attr("class", "chartarea")
         .attr("width", self.idata.WIDTH)
         .attr("height", self.idata.HEIGHT)
         .attr("transform", "translate(" + self.idata.margin.left + ", " + self.idata.margin.top + ")");
     var yaxiscover = chart.append("g")
-        .attr("id", "y-axis-cover")
-        .attr("class", "axiscover");
+        .attr("class", "y-axis-cover axiscover");
     yaxiscover.append("rect")
         .attr("width", self.idata.margin.left)
         .attr("height", self.idata.margin.top + self.idata.HEIGHT + self.idata.margin.bottom)
-        .attr("id", "y-axis-background-left")
+        .attr("class", "y-axis-background-left")
         .attr("fill", "white");
     yaxiscover.append("rect")
         .attr("width", self.idata.margin.right)
         .attr("height", self.idata.margin.top + self.idata.HEIGHT + self.idata.margin.bottom)
         .attr("transform", "translate(" + (self.idata.margin.left + self.idata.WIDTH) + ", 0)")
-        .attr("id", "y-axis-background-right")
+        .attr("class", "y-axis-background-right")
         .attr("fill", "white");
     var xaxiscover = chart.append("g")
-        .attr("id", "x-axis-cover")
+        .attr("class", "x-axis-cover")
         .attr("transform", "translate(" + self.idata.margin.left + ", " + (self.idata.margin.top + self.idata.HEIGHT) + ")");
     xaxiscover.append("rect")
         .attr("width", self.idata.WIDTH + 2) // Move 1 to the left and increase self.idata.WIDTH by 2 to cover boundaries when zooming
         .attr("height", self.idata.margin.bottom)
         .attr("transform", "translate(-1, 0)")
-        .attr("id", "x-axis-background")
+        .attr("class", "x-axis-background")
         .attr("fill", "white");
     self.idata.xTitle = xaxiscover.append("text")
-        .attr("id", "xtitle")
-        .attr("class", "title")
+        .attr("class", "xtitle title")
         .attr("text-anchor", "middle")
         .attr("x", self.idata.WIDTH / 2)
         .attr("y", 45)
@@ -180,63 +178,61 @@ function initPlot(self) {
         .attr("y", 35)
         .node();
     var datadensitycover = chart.append("g")
-        .attr("id", "data-density-cover")
+        .attr("class", "data-density-cover")
         .attr("transform", "translate(" + self.idata.margin.left + ", 0)");
     datadensitycover.append("rect") // Move 1 to the left and increase self.idata.WIDTH by 2 to cover boundaries when zooming
         .attr("width", self.idata.WIDTH + 2)
         .attr("height", self.idata.margin.top)
         .attr("transform", "translate(-1, 0)")
-        .attr("id", "data-density-background")
+        .attr("class", "data-density-background")
         .attr("fill", "white");
     xaxiscover.append("g")
-        .attr("id", "x-axis")
-        .attr("class", "axis");
+        .attr("class", "x-axis axis");
     chart.append("g")
         .attr("transform", "translate(0, " + self.idata.margin.top + ")")
-        .attr("id", "y-axes");
+        .attr("class", "y-axes");
     datadensitycover.append("g")
         .attr("transform", "translate(0, 10)")
-        .attr("id", "data-density-plot")
+        .attr("class", "data-density-plot")
       .append("g")
-        .attr("id", "data-density-axis");
+        .attr("class", "data-density-axis");
     chart.append("rect") // To sense mouse click/drag
         .attr("width", self.idata.WIDTH)
         .attr("height", self.idata.HEIGHT)
         .attr("transform", "translate(" + self.idata.margin.left + ", " + self.idata.margin.top + ")")
         .call(self.idata.zoom)
-        .attr("onmousedown", "$(this).attr('class', 'clickedchart');")
-        .attr("onmouseup", "$(this).attr('class', 'unclickedchart');")
+        .attr("onmousedown", "$(this).attr('class', 'clickscreen clickedchart');")
+        .attr("onmouseup", "$(this).attr('class', 'clickscreen unclickedchart');")
         .attr("fill", "none")
-        .attr("id", "clickscreen")
-        .attr("class", "unclickedchart");
-    self.idata.loadingElem = self.$('#plotLoading');
+        .attr("class", "clickscreen unclickedchart");
+    self.idata.loadingElem = $(self.find('.plotLoading'));
     self.idata.initialized = true;
 }
 
 /* Updates the size of the chart based on changes to the margins. */
 function updateSize(self) {
-    self.$("svg#chart, svg#chart rect#background-rect").attr({
+    self.$("svg.chart, svg.chart rect.background-rect").attr({
         width: self.idata.margin.left + self.idata.WIDTH + self.idata.margin.right,
         height: self.idata.margin.top + self.idata.HEIGHT + self.idata.margin.bottom
         });
-    self.$("svg#chart g#chartarea, svg#chart rect#clickscreen").attr("transform", "translate(" + self.idata.margin.left + ", " + self.idata.margin.top + ")");
-    self.$("svg#chart g#x-axis-cover").attr("transform", "translate(" + self.idata.margin.left + ", " + (self.idata.margin.top + self.idata.HEIGHT) + ")");
-    self.$("svg#chart g#data-density-cover").attr("transform", "translate(" + self.idata.margin.left + ", 0)");
-    self.$("rect#x-axis-background").attr("self.idata.HEIGHT", self.idata.margin.bottom);
-    self.$("rect#y-axis-background-left").attr({
+    self.$("svg.chart g.chartarea, svg.chart rect.clickscreen").attr("transform", "translate(" + self.idata.margin.left + ", " + self.idata.margin.top + ")");
+    self.$("svg.chart g.x-axis-cover").attr("transform", "translate(" + self.idata.margin.left + ", " + (self.idata.margin.top + self.idata.HEIGHT) + ")");
+    self.$("svg.chart g.data-density-cover").attr("transform", "translate(" + self.idata.margin.left + ", 0)");
+    self.$("rect.x-axis-background").attr("self.idata.HEIGHT", self.idata.margin.bottom);
+    self.$("rect.y-axis-background-left").attr({
             width: self.idata.margin.left,
             height: self.idata.margin.top + self.idata.HEIGHT + self.idata.margin.bottom
         });
-    self.$("rect#y-axis-background-right").attr({
+    self.$("rect.y-axis-background-right").attr({
             width: self.idata.margin.right,
             height: self.idata.margin.top + self.idata.HEIGHT + self.idata.margin.bottom,
             transform: "translate(" + (self.idata.margin.left + self.idata.WIDTH) + ", 0)"
         });
-    self.$("g#y-axes").attr("transform", "translate(0, " + self.idata.margin.top + ")");
+    self.$("g.y-axes").attr("transform", "translate(0, " + self.idata.margin.top + ")");
 }
 
 function disableInputs(self) {
-    self.idata.inputs = [self.$("input, button, select"), self.find("#streamTree")];
+    self.idata.inputs = [self.$("input, button, select"), self.find(".streamTree")];
     self.idata.inputs[0].prop("disabled", true);
     self.idata.inputs[1].style["pointer-events"] = "none";
 }
@@ -289,8 +285,8 @@ function drawPlot(self) {
     // dateConverter is defined in plotter.html
     var loadingElem = self.idata.loadingElem;
     loadingElem.html("Verifying date range...");
-    var startText = self.find("#startdate").value;
-    var endText = self.find("#enddate").value;
+    var startText = self.find(".startdate").value;
+    var endText = self.find(".enddate").value;
     if (startText == "") {
         loadingElem.html("Error: Start date is not selected.");
         enableInputs(self);
@@ -368,7 +364,7 @@ function drawPlot(self) {
     // Get the data for the streams
     repaintZoomNewData(self, function () {
             if (!sameTimeRange) {
-                d3.select("g#x-axis")
+                d3.select(self.find("g.x-axis"))
                     .call(xAxis);
                 self.idata.zoom.x(xScale);
             }
@@ -478,7 +474,7 @@ function drawYAxes(self, data, streams, streamSettings, startDate, endDate, xSca
     
     // Draw the y-axes
     var update;
-    update = d3.select("svg#chart g#y-axes")
+    update = d3.select(self.find("svg.chart g.y-axes"))
       .selectAll("g.y-axis-left")
       .data(leftYAxes);
     update.enter()
@@ -489,7 +485,7 @@ function drawYAxes(self, data, streams, streamSettings, startDate, endDate, xSca
         .each(function (yAxis) { d3.select(this).call(yAxis.orient("left")); });
     update.exit().remove();
     
-    update = d3.select("svg#chart g#y-axes")
+    update = d3.select(self.find("svg.chart g.y-axes"))
       .selectAll("g.y-axis-right")
       .data(rightYAxes);
     update.enter()
@@ -501,14 +497,13 @@ function drawYAxes(self, data, streams, streamSettings, startDate, endDate, xSca
     update.exit().remove();
     
     // Draw the y-axis titles
-    update = d3.select("svg#chart")
+    update = d3.select(self.find("svg.chart"))
       .selectAll("text.ytitle")
       .data(yAxes);
     update.enter()
-      .append("text")
-        .attr("class", "ytitle title");
+      .append("text");
     update
-        .attr("id", function (d) { return "axistitle-" + d.axisid; })
+        .attr("class", function (d) { return "ytitle title axistitle-" + d.axisid; })
         .attr("text-anchor", "middle")
         .attr("transform", (function () {
                 var i = 0; // index of left axis
@@ -539,7 +534,7 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
         } else {
             loadingElem.html("Error: All selected streams have no data.");
         }
-        self.$("g#chartarea > g").remove();
+        self.$("g.chartarea > g").remove();
         enableInputs(self);
         return;
     }
@@ -623,7 +618,7 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
             s3ui.setStreamMessage(self, streams[i].uuid, "Data outside axis range; try rescaling y-axis", 3);
         }
     }    
-    update = d3.select("g#chartarea")
+    update = d3.select(self.find("g.chartarea"))
       .selectAll("g")
       .data(dataArray);
         
@@ -632,7 +627,7 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
         
     if (!drawFast) {
         update
-            .attr("id", function (dataObj) { return "series-" + dataObj.uuid; })
+            .attr("class", function (dataObj) { return "series-" + dataObj.uuid; })
             .attr("stroke", function (d) { return d.color; })
             .attr("stroke-self.idata.WIDTH", 1)
             .attr("fill", function (d) { return d.color; })
@@ -642,7 +637,7 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
     update.exit()
         .remove();
         
-    update = d3.select("g#chartarea")
+    update = d3.select(self.find("g.chartarea"))
       .selectAll("g")
       .selectAll("polyline")
       .data(function (d, i) { return dataArray[i].data; });
@@ -664,7 +659,7 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
     }
     
     if (self.idata.showingDensity != undefined) {
-        self.$("svg#chart g#data-density-plot polyline").remove();
+        self.$("svg.chart g.data-density-plot polyline").remove();
         showDataDensity(self, self.idata.showingDensity);
     }
 }
@@ -766,7 +761,7 @@ function showDataDensity(self, uuid) {
         }
         j++;
     }
-    var ddplot = d3.select("svg#chart g#data-density-plot");
+    var ddplot = d3.select(self.find("svg.chart g.data-density-plot"));
     ddplot.append("polyline")
         .attr("points", toDraw.join(" "))
         .attr("fill", "none")
@@ -774,7 +769,7 @@ function showDataDensity(self, uuid) {
         
     var formatter = d3.format("d");
     
-    ddplot.select("g#data-density-axis")
+    ddplot.select("g.data-density-axis")
         .call(d3.svg.axis().scale(yScale).orient("left").tickValues([0.5, Math.round(Math.sqrt(totalmax)), totalmax])
         .tickFormat(function (d) {
                 if (d < 1) {
@@ -785,8 +780,8 @@ function showDataDensity(self, uuid) {
 }
 
 function hideDataDensity(self) {
-    self.$("svg#chart g#data-density-plot polyline").remove();
-    self.$("svg#chart g#data-density-plot g#data-density-axis").empty();
+    self.$("svg.chart g.data-density-plot polyline").remove();
+    self.$("svg.chart g.data-density-plot g.data-density-axis").empty();
     self.idata.showingDensity = undefined;
 }
 

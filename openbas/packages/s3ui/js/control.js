@@ -38,7 +38,7 @@ function deselectStreams(uuids) {
    it represents in local time. The start time is set with "second" precision;
    milliseconds are ignored. */
 function setStartTime(date) {
-    var startTime = this.find("#startdate");
+    var startTime = this.find(".startdate");
     var newValue = this.idata.dateConverter.format(date);
     if (startTime.value != newValue) {
         startTime.value = newValue;
@@ -50,7 +50,7 @@ function setStartTime(date) {
    it represents in local time. The start time is set with "second" precision;
    milliseconds are ignored. */
 function setEndTime(date) {
-    var endTime = this.find("#enddate");
+    var endTime = this.find(".enddate");
     var newValue = this.idata.dateConverter.format(date);
     if (endTime.value != newValue) {
         endTime.value = newValue;
@@ -60,7 +60,7 @@ function setEndTime(date) {
 
 /* Sets the timezone to the IANA timezone string TZ. */
 function setTimezone(tz) {
-    var select = this.find("#timezoneSelect");
+    var select = this.find(".timezoneSelect");
     var i;
     for (i = 0; select[i].value !== "OTHER"; i++) {
         if (tz === select[i].value) {
@@ -74,7 +74,7 @@ function setTimezone(tz) {
     select.onchange();
     var otherTZ;
     if (select[i].value === "OTHER") {
-        otherTZ = this.find("#otherTimezone");
+        otherTZ = this.find(".otherTimezone");
         if (otherTZ.value !== tz) {
             otherTZ.value = tz;
             otherTZ.onchange();
@@ -94,7 +94,7 @@ function removeAxis(id) {
 
 /* Changes the name of the axis with the specified ID. */
 function renameAxis(id, newName) {
-    var input = this.find("#axis-" + id).firstChild.firstChild;
+    var input = this.find(".axis-" + id).firstChild.firstChild;
     if (input.value !== newName) {
         input.value = newName;
         input.onchange();
@@ -107,7 +107,7 @@ function setAxisSide(id, left) {
     if (!this.idata.axisMap.hasOwnProperty(id)) {
         return;
     }
-    var radButton = this.find("#axis-" + id).lastChild;
+    var radButton = this.find(".axis-" + id).lastChild;
     radButton = left ? radButton.firstChild.firstChild : radButton.lastChild.firstChild;
     if (!radButton.checked) {
         radButton.checked = true;
@@ -125,7 +125,7 @@ function setAxisScale(id, low, high) {
     }
     var autoscale = low == undefined && high == undefined;
     var currautoscale = this.idata.axisMap[id].autoscale;
-    var row = this.find("#axis-" + id);
+    var row = this.find(".axis-" + id);
     var checkbox;
     var endpoints;
     if (autoscale) {
@@ -159,7 +159,7 @@ function setAxisScale(id, low, high) {
 
 /* Assigns the stream corresponding to UUID to the axis corresponding to ID. */
 function setStreamAxis(uuid, id) {
-    var selectElem = this.find("#axis-select-" + uuid);
+    var selectElem = this.find(".axis-select-" + uuid);
     if (selectElem.getAttribute("data-prevselect") === id) {
         return;
     }
@@ -175,7 +175,7 @@ function setStreamAxis(uuid, id) {
 /* Assigns the stream corresponding to UUID the color COLOR. See
    "makeMenuMaker()" in utils.js for a list of possible colors. */
 function setStreamColor(uuid, color) {
-    var colorSelect = this.find("#color-" + uuid);
+    var colorSelect = this.find(".color-" + uuid);
     if (colorSelect[colorSelect.selectedIndex].value !== color) {
         $.data(colorSelect).simplecolorpicker.selectColor(color);
         colorSelect.onchange();
@@ -184,7 +184,7 @@ function setStreamColor(uuid, color) {
 
 /* Programmatically presses the "Apply all Settings and Update Plot" button. */
 function applyAllSettings() {
-    this.find("#plotButton").onclick();
+    this.find(".plotButton").onclick();
 }
 
 /* To programmatically presses the "Reset Zoom" button, just call "resetZoom". */
@@ -192,7 +192,7 @@ function applyAllSettings() {
 /* Programmatically toggles the "Automatic Axis Update" checkbox. Its value can
    be found by reading the value of the "automaticAxisUpdate" boolean. */
 function toggleAutomaticUpdate() {
-    var checkbox = this.find("#automaticAxisSetting");
+    var checkbox = this.find(".automaticAxisSetting");
     checkbox.checked = !checkbox.checked;
     checkbox.onchange();
 }

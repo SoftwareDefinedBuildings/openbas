@@ -16,11 +16,11 @@ function init_frontend(self) {
 }
 
 function updateStreamList(self) {
-    self.$("span#streamLoading").html("Loading Streams...");
+    self.$("span.streamLoading").html("Loading Streams...");
     s3ui.getURL('http://bunker.cs.berkeley.edu/backend/api/tags', function (data) {
             self.idata.streamList = JSON.parse(data);
             
-            self.$("span#streamLoading").html("");
+            self.$("span.streamLoading").html("");
               
             if (self.idata.streamTree != undefined) {
                 // Remove everything from legend before destroying tree
@@ -32,7 +32,7 @@ function updateStreamList(self) {
                 s3ui.applySettings(self);
             }
             
-            var streamTreeDiv = self.$("div#streamTree");
+            var streamTreeDiv = self.$("div.streamTree");
             streamTreeDiv.jstree({
                     core: {
                         data: s3ui.listToTree(self.idata.streamList)
@@ -63,17 +63,17 @@ function toggleLegend (self, show, streamdata, update) {
     }
     if (show) {
         self.idata.selectedStreamsBuffer.push(streamdata);
-        var row = d3.select("tbody#legend")
+        var row = d3.select(self.find("tbody.legend"))
           .append("tr")
             .datum(streamdata)
-            .attr("id", function (d) { return "legend-" + d.uuid; });
+            .attr("class", function (d) { return "legend-" + d.uuid; });
         var colorMenu = row.append("td")
             .append(self.idata.makeColorMenu)
-            .attr("id", function (d) { return "color-" + d.uuid; })
+            .attr("class", function (d) { return "color-" + d.uuid; })
           .node();
         colorMenu.onchange = function () {
                   var newColor = this[this.selectedIndex].value;
-                  var streamGroup= self.$("g#series-" + streamdata.uuid);
+                  var streamGroup= self.$("g.series-" + streamdata.uuid);
                   streamGroup.attr("stroke", newColor);
                   streamGroup.attr("fill", newColor);
                   self.idata.streamSettings[streamdata.uuid].color = newColor;
@@ -85,7 +85,7 @@ function toggleLegend (self, show, streamdata, update) {
           .node();
         nameElem.onmouseover = function () {
                 if (self.idata.initialized) {
-                    self.$("g#series-" + streamdata.uuid).attr({"stroke-width": 3, "fill-opacity": 0.5});
+                    self.$("g.series-" + streamdata.uuid).attr({"stroke-width": 3, "fill-opacity": 0.5});
                     var xdomain = self.idata.oldXScale.domain();
                     var currPWE = s3ui.getPWExponent((xdomain[1] - xdomain[0]) / self.idata.WIDTH);
                     setStreamMessage(self, streamdata.uuid, "Interval width: " + s3ui.nanosToUnit(Math.pow(2, currPWE)), 2);
@@ -93,14 +93,13 @@ function toggleLegend (self, show, streamdata, update) {
                 }
             };
         nameElem.onmouseout = function () {
-                self.$("g#series-" + streamdata.uuid).attr({"stroke-width": 1, "fill-opacity": 0.3});
+                self.$("g.series-" + streamdata.uuid).attr({"stroke-width": 1, "fill-opacity": 0.3});
                 setStreamMessage(self, streamdata.uuid, undefined, 2);
                 s3ui.hideDataDensity(self);
             };
         var selectElem = row.append("td")
           .append("select")
-            .attr("class", "axis-select")
-            .attr("id", "axis-select-" + streamdata.uuid);
+            .attr("class", "axis-select axis-select-" + streamdata.uuid);
         selectElem.selectAll("option")
           .data(self.idata.yAxes)
           .enter()
@@ -124,14 +123,14 @@ function toggleLegend (self, show, streamdata, update) {
                     s3ui.applySettings(self);
                 }
             };
-        var intervalWidth = row.append("td").attr("id", "message-" + streamdata.uuid).node();
+        var intervalWidth = row.append("td").attr("class", "message-" + streamdata.uuid).node();
         s3ui.changeAxis(self, streamdata, null, selectNode[selectNode.selectedIndex].value);
-        $("select#color-" + streamdata.uuid).simplecolorpicker({picker: true});
+        $("select.color-" + streamdata.uuid).simplecolorpicker({picker: true});
         if (update) { // Go ahead and display the stream
             s3ui.applySettings(self);
         }
     } else {
-        var toRemove = self.find("#legend-" + streamdata.uuid);
+        var toRemove = self.find(".legend-" + streamdata.uuid);
         var selectElem = d3.select(toRemove).select('.axis-select').node();
         var oldAxis = selectElem[selectElem.selectedIndex].value;
         s3ui.changeAxis(self, streamdata, oldAxis, null);
@@ -160,11 +159,11 @@ function setStreamMessage(self, uuid, message, importance) {
                 importance--;
             }
             messages[1] = importance;
-            self.find("#message-" + uuid).innerHTML = messages[0][importance];
+            self.find(".message-" + uuid).innerHTML = messages[0][importance];
         }
     } else if (importance >= messages[1]) {
         messages[1] = importance;
-        self.find("#message-" + uuid).innerHTML = message;
+        self.find(".message-" + uuid).innerHTML = message;
     }
 }
 
@@ -179,32 +178,32 @@ function updatePlotMessage(self) {
             message = 'Click "Apply all Settings and Plot Data" to update the graph.';
         }
     }
-    self.find("#plotLoading").innerHTML = message;
+    self.find(".plotLoading").innerHTML = message;
 }
 
 function getSelectedTimezone(self) {
-    var timezoneSelect = self.find("#timezoneSelect");
+    var timezoneSelect = self.find(".timezoneSelect");
     var selection = timezoneSelect[timezoneSelect.selectedIndex].value;
     if (selection == "OTHER") {
-        return self.find("#otherTimezone").value.trim();
+        return self.find(".otherTimezone").value.trim();
     } else {
         return selection;
     }
 }
 
 function createPlotDownload(self) {
-    var chartElem = self.find("#chart");
+    var chartElem = self.find(".chart");
     var chartData = chartElem.innerHTML.replace(/[\d.]+em/g, function (match) {
             return (parseFloat(match.slice(0, match.length - 2)) * 16) + "px";
         }); // It seems that using "em" to position fonts doesn't work in Inkview, a common SVG viewing application
-    var graphStyle = self.find("#plotStyles").innerHTML;
+    var graphStyle = self.find(".plotStyles").innerHTML;
     var xmlData = '<svg width="' + chartElem.getAttribute("width") + '" height="' + chartElem.getAttribute("height") + '" font-family="serif" font-size="16px">'
         + '<defs><style type="text/css"><![CDATA[' + graphStyle + ']]></style></defs>' + chartData + '</svg>';
     var downloadAnchor = document.createElement("a");
     downloadAnchor.innerHTML = "Download Image (created " + (new Date()).toLocaleString() + ", local time)";
     downloadAnchor.setAttribute("href", 'data:text/svg;charset="utf-8",' + encodeURIComponent(xmlData));
     downloadAnchor.setAttribute("download", "graph.svg");
-    var linkLocation = self.find("#download-graph");
+    var linkLocation = self.find(".download-graph");
     linkLocation.innerHTML = ""; // Clear what was there before...
     linkLocation.insertBefore(downloadAnchor, null); // ... and replace it with this download link
 }
