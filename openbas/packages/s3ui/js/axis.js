@@ -178,7 +178,11 @@ function removeYAxis(self, axis) {
     if (mustUpdate) {
         s3ui.applySettings(self);
     }
-    self.$("tr.axis-" + axis.axisid).remove();
+    var row = self.find("tr.axis-" + axis.axisid);
+    if (!axis.autoscale) {
+        row.parentNode.removeChild(row.nextSibling);
+    }
+    row.parentNode.removeChild(row);
     self.$("option.option-" + axis.axisid).remove();
 }
 
