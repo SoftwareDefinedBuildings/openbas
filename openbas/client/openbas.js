@@ -1,4 +1,5 @@
 Points = new Meteor.Collection("points");
+instances = [];
 
 deliver = function(err, res) {
   if (err) {
@@ -48,6 +49,8 @@ if (Meteor.isClient) {
         console.log("You pressed the button");
     }
   });
+  
+  Template.smap_plot.plot_data = [{ hide_main_title: true, hide_graph_title: true, hide_graph_export: true, hide_stream_legend: true, hide_axis_legend: true, hide_settings_title: true, hide_automatic_update: true, hide_apply_button: true, hide_reset_button: true, hide_info_bar: true, hide_time_selection: true, hide_stream_tree: true }, function (inst) { instances.push(inst); }];
 }
 
 if (Meteor.isServer) {
