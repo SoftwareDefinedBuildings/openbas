@@ -50,7 +50,7 @@ if (Meteor.isClient) {
     }
   });
   
-  Template.smap_plot.plot_data = [{ hide_main_title: true, hide_graph_title: true, hide_graph_export: true, hide_stream_legend: true, hide_axis_legend: true, hide_settings_title: true, hide_automatic_update: true, hide_apply_button: true, hide_reset_button: true, hide_info_bar: true, hide_time_selection: true, hide_stream_tree: true }, function (inst) { instances.push(inst); }];
+  Template.smap_plot.plot_data = [{ hide_main_title: true, hide_graph_title: true, hide_graph_export: true, hide_stream_legend: false, disable_color_selection: true, hide_axis_legend: true, hide_axis_selection: false, hide_settings_title: true, hide_automatic_update: true, hide_apply_button: true, hide_reset_button: true, hide_info_bar: true, hide_time_selection: true, hide_stream_tree: false, width: 900, height: 400 }, function (inst) { instances.push(inst); }];
 }
 
 if (Meteor.isServer) {

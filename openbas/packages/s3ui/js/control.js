@@ -198,3 +198,4 @@ function toggleAutomaticUpdate() {
 }
 
 s3ui.init_control = init_control;
+s3ui.bind_method = bind_method;

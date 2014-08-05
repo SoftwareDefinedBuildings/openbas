@@ -1,0 +1,31 @@
+.outline {
+    border: 1px solid black;
+}
+td.checkboxlabel {
+    font-weight: bold;
+}
+input.datefield {
+    width: 200px;
+}
+input.axisname {
+    width: 75px;
+}
+input.axisrange {
+    width: 50px;
+}
+td.axisrangeselect {
+    text-align: right;
+}
+svg.chart {
+    font-size: 16px;
+    font-family: serif;
+}
+.unclickedchart {
+    cursor: url(../img/openhand.cur), move;
+}
+.clickedchart {
+    cursor: url(../img/closedhand.cur), move;
+}
+rect.clickscreen {
+    pointer-events: visibleFill;
+}

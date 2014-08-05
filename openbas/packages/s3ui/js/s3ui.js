@@ -1,5 +1,4 @@
 s3ui = {instances: [], instanceid: -1}; // stores functions used in multiple files
-var hidden = "display: none;";
 
 Template.s3plot.rendered = function () {
         var self = this;
@@ -8,8 +7,33 @@ Template.s3plot.rendered = function () {
         self.idata = {}; // an object to store instance data
         self.imethods = {}; // an object to store instance methods
         
+        self.idata.instanceid = ++s3ui.instanceid;
+        if (s3ui.instanceid == 4503599627370495) {
+            s3ui.instanceid = -4503599627370495;
+        }
+        
+        self.find("tr.streamLegend").className = "streamLegend-" + self.idata.instanceid;
+        self.idata.dynamicStyles = self.find("style.dynamicStyles");
+        
+        s3ui.init_axis(self);
+        s3ui.init_plot(self);
+        s3ui.init_data(self);
+        s3ui.init_frontend(self);
+        s3ui.init_control(self);
+        
         if (self.data !== null && typeof self.data === "object" && typeof self.data[0] === "object" && typeof self.data[1] === "function") {
             init_visuals(self, self.data[0]);
+            if (self.data[0].width != undefined) {
+                self.find("svg.chart").setAttribute("width", self.data[0].width);
+                self.idata.WIDTH = self.data[0].width;
+            }
+            if (self.data[0].height != undefined) {
+                self.find("svg.chart").setAttribute("height", self.data[0].height);
+                self.idata.HEIGHT = self.data[0].height;
+            }
+            self.imethods.changeVisuals = function (options) {
+                    init_visuals(self, options);
+                };
             self.data[1](self);
         }
         
@@ -20,7 +44,7 @@ function init_visuals(self, options) {
     setVisibility(self, options, "h1.mainTitle", "hide_main_title");
     setVisibility(self, options, "h2.graphTitle", "hide_graph_title");
     setVisibility(self, options, "div.graphExport", "hide_graph_export");
-    setVisibility(self, options, "tr.streamLegend", "hide_stream_legend");
+    setVisibility(self, options, "tr.streamLegend-" + self.idata.instanceid, "hide_stream_legend");
     setVisibility(self, options, "tr.axisLegend", "hide_axis_legend");
     setVisibility(self, options, "span.settingsTitle", "hide_settings_title");
     setVisibility(self, options, "span.automaticUpdate", "hide_automatic_update");
@@ -29,30 +53,33 @@ function init_visuals(self, options) {
     setVisibility(self, options, "span.plotLoading", "hide_info_bar");
     setVisibility(self, options, "div.timeSelection", "hide_time_selection");
     setVisibility(self, options, "div.streamSelection", "hide_stream_tree");
+    
+    setCSSRule(self, options, "tr.streamLegend-" + self.idata.instanceid + " select.axis-select { display: none; }", "hide_axis_selection");
+    setCSSRule(self, options, "tr.streamLegend-" + self.idata.instanceid + " span.simplecolorpicker { pointer-events: none; }", "disable_color_selection");
 }
 
 function setVisibility(self, options, selector, attr) {
     if (options.hasOwnProperty(attr)) {
         if (options[attr]) {
-            self.find(selector).setAttribute("style", hidden);
+            self.find(selector).setAttribute("style", "display: none;");
         } else {
             self.find(selector).setAttribute("style", "");
         }
     }
 }
-    
-function __init__(self) {
-    s3ui.init_axis(self);
-    s3ui.init_plot(self);
-    s3ui.init_data(self);
-    s3ui.init_frontend(self);
-    s3ui.init_control(self);
-    
-    self.idata.instanceid = ++s3ui.instanceid;
-    if (s3ui.instanceid == 4503599627370495) {
-        s3ui.instanceid = -4503599627370495;
+
+function setCSSRule(self, options, rule, attr) {
+    if (options.hasOwnProperty(attr)) {
+        var styles = self.idata.dynamicStyles;
+        if (options[attr]) {
+            styles.innerHTML += rule;
+        } else {
+            styles.innerHTML = styles.innerHTML.replace(rule, "");
+        }
     }
+}
     
+function __init__(self) {    
     // Event handlers are added programmatically
     self.find(".makeGraph").onclick = function () {
             self.find(".download-graph").innerHTML = 'Creating image...';

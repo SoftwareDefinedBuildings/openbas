@@ -1,80 +1,39 @@
 <template name="s3plot">
-    <style>
-        .outline {
-            border: 1px solid black;
-        }
-        td.checkboxlabel {
-            font-weight: bold;
-        }
-        input.datefield {
-            width: 200px;
-        }
-        input.axisname {
-            width: 75px;
-        }
-        input.axisrange {
-            width: 50px;
-        }
-        td.axisrangeselect {
-            text-align: right;
-        }
-        svg.chart {
-            font-size: 16px;
-            font-family: serif;
-        }
-    </style>
     <style class="plotStyles">
         polyline.streamRange {
             fill: inherit;
             fill-opacity: inherit;
             stroke: none;
         }
-
         polyline.streamMean {
             fill: none;
             stroke: inherit;
             stroke-opacity: 1;
             stroke-width: inherit;
         }
-        rect.clickscreen {
-            pointer-events: visibleFill;
-        }
-
         rect.scrollDisabled {
             visiblity: hidden;
         }
-
-        .unclickedchart {
-            cursor: url(packages/s3ui/img/openhand.cur), move;
-        }
-
-        .clickedchart {
-            cursor: url(packages/s3ui/img/closedhand.cur), move;
-        }
-
         path, line {
             fill: none;
             stroke: black;
             shape-rendering: crispEdges;
         }
-
         text.title {
             font-size: 20px;
         }
-        
         text.label {
             font-size: 12px;
         }
-        
         g.tick text {
             font-size: 16px;
         }
-        
         g.data-density-axis text {
             font-size: 14px;
         }
     </style>
-
+    <style class="dynamicStyles">
+    </style>
     <!-- This is where <body> started in the original HTML document. -->
     <h1 class="mainTitle">sMAP Plotting Tool</h1>
     <h2 class="graphTitle">Graph</h2>

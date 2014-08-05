@@ -16,6 +16,7 @@ Package.on_use(function (api) {
   
   api.add_files(path.join(asset_path, 'img', 'openhand.cur'), 'client');
   api.add_files(path.join(asset_path, 'img', 'closedhand.cur'), 'client');
+  api.add_files(path.join(asset_path, 'css', 's3ui.css'), 'client');
   api.add_files(path.join(asset_path, 'html', 's3ui.html'), 'client');
   api.add_files(path.join(asset_path, 'js', 's3ui.js'), 'client');
   api.add_files(path.join(asset_path, 'js', 'axis.js'), 'client');
