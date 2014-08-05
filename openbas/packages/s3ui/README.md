@@ -1,17 +1,17 @@
 s3ui package
 ============
-This package defines the "s3ui" template, which contains a graphing utility
+This package defines the "s3plot" template, which contains a graphing utility
 that can be included in a Meteor application. Multiple graphs can be inserted
 into the same web page and will act independently of one another.
 
 To insert a graph with full control available to the user, simply use the
 inclusion operator:
-<pre><code>{{> s3ui}}</code></pre>
+<pre><code>{{> s3plot}}</code></pre>
 
 One can also instantiate the graph with paremeters, by wrapping the inclusion
 operator in a data context:
 <pre><code>{{#with somecontext}}
-    {{> s3ui}}
+    {{> s3plot}}
 {{/with}}</code></pre>
 
 If "somecontext" is an array (or array-like object) with an object at index 0
