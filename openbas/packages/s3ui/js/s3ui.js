@@ -53,6 +53,7 @@ function init_visuals(self, options) {
     setVisibility(self, options, "span.plotLoading", "hide_info_bar");
     setVisibility(self, options, "div.timeSelection", "hide_time_selection");
     setVisibility(self, options, "div.streamSelection", "hide_stream_tree");
+    setVisibility(self, options, "g.plotDirections", "hide_plot_directions");
     
     setCSSRule(self, options, "tr.streamLegend-" + self.idata.instanceid + " select.axis-select { display: none; }", "hide_axis_selection");
     setCSSRule(self, options, "tr.streamLegend-" + self.idata.instanceid + " span.simplecolorpicker { pointer-events: none; }", "disable_color_selection");
