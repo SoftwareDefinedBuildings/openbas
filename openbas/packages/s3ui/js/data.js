@@ -81,6 +81,21 @@ function validateLoaded(self) {
     return total == self.idata.loadedData;
 }
 
+/* Checks if there are any holes in a cache entry and prints out information
+   about the holes if they exist. Used for debugging. */
+function validateContiguous(cacheEntry, pwe) {
+    var di;
+    var pw = Math.pow(2, pwe);
+    for (di = 0; di < cacheEntry.cached_data.length - 1; di++) {
+        if (((cacheEntry.cached_data[di + 1][0] - cacheEntry.cached_data[di][0]) * 1000000) + cacheEntry.cached_data[di + 1][1] - cacheEntry.cached_data[di][1] != pw) {
+            console.log('Gap');
+            console.log(((cacheEntry.cached_data[di + 1][0] - cacheEntry.cached_data[di][0]) * 1000000) + cacheEntry.cached_data[di + 1][1] - cacheEntry.cached_data[di][1]);
+            console.log(pw);
+            console.log(di);
+        }
+    }
+}
+
 /* Ensures that the stream with the specified UUID has data cached from
    STARTTIME to ENDTIME at the point width corresponding to POINTWIDTHEXP, or
    floor(lg(POINTWIDTH)). If it does not, data are procured from the server and
@@ -175,7 +190,7 @@ function insertData(self, uuid, cache, data, dataStart, dataEnd, callback) {
             }
         }
     }
-    var cacheEntry = new CacheEntry(cacheStart, cacheEnd, dataBefore.concat(data.slice(m, n), dataAfter));
+    var cacheEntry = new CacheEntry(cacheStart, cacheEnd, dataBefore.concat(data.slice(m, n + 1), dataAfter));
     var loadedStreams = self.idata.loadedStreams;
     for (var k = i; k <= j; k++) {
         self.idata.loadedData -= cache[k].cached_data.length;
@@ -196,7 +211,7 @@ function insertData(self, uuid, cache, data, dataStart, dataEnd, callback) {
    such that ENDTIME either occurs in the cache entry at index j or between the
    cache entries at indices j and j + 1. The third element, a boolean, is false
    if STARTTIME occurs in the cache entry at index i and true if it is between
-   the cache entries at indices i - 1 and i. The fouth element, also a boolean,
+   the cache entries at indices i - 1 and i. The fourth element, also a boolean,
    false if ENDTIME occurs in the cache entry at index j and true if it is
    between the cache entries at indices j and j + 1 */
    

@@ -84,17 +84,16 @@ function toggleLegend (self, show, streamdata, update) {
             .html(function (d) { return s3ui.getFilepath(d); })
           .node();
         nameElem.onmouseover = function () {
-                if (self.idata.initialized) {
+                if (self.idata.oldData.hasOwnProperty(streamdata.uuid)) {
                     self.$("g.series-" + streamdata.uuid).attr({"stroke-width": 3, "fill-opacity": 0.5});
                     var xdomain = self.idata.oldXScale.domain();
-                    var currPWE = s3ui.getPWExponent((xdomain[1] - xdomain[0]) / self.idata.WIDTH);
-                    setStreamMessage(self, streamdata.uuid, "Interval width: " + s3ui.nanosToUnit(Math.pow(2, currPWE)), 2);
+                    setStreamMessage(self, streamdata.uuid, "Interval width: " + s3ui.nanosToUnit(Math.pow(2, self.idata.oldData[streamdata.uuid][2])), 3);
                     s3ui.showDataDensity(self, streamdata.uuid);
                 }
             };
         nameElem.onmouseout = function () {
                 self.$("g.series-" + streamdata.uuid).attr({"stroke-width": 1, "fill-opacity": 0.3});
-                setStreamMessage(self, streamdata.uuid, undefined, 2);
+                setStreamMessage(self, streamdata.uuid, undefined, 3);
                 s3ui.hideDataDensity(self);
             };
         var selectElem = row.append("td")

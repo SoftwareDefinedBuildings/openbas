@@ -98,7 +98,7 @@ function repaintZoomNewData(self, callback, stopCache) {
             self.idata.oldData[stream.uuid] = [stream, data, pwe];
             numResponses++;
             if (!stopCache) {
-                s3ui.setStreamMessage(self, stream.uuid, undefined, 5);
+                s3ui.setStreamMessage(self, stream.uuid, undefined, 2);
                 s3ui.setStreamMessage(self, stream.uuid, "Caching data...", 1);
                 setTimeout(function () { cacheData(self, stream.uuid, thisID, pwe, startTime, endTime); }, 0); // do it asynchronously
             }
@@ -113,7 +113,7 @@ function repaintZoomNewData(self, callback, stopCache) {
         self.idata.drawRequestID = -1;
     }
     for (var i = 0; i < selectedStreams.length; i++) {
-        s3ui.setStreamMessage(self, selectedStreams[i].uuid, "Fetching data...", 5);
+        s3ui.setStreamMessage(self, selectedStreams[i].uuid, "Fetching data...", 2);
         s3ui.ensureData(self, selectedStreams[i].uuid, pwe, domain[0] - self.idata.oldOffsets[i], domain[1] - self.idata.oldOffsets[i], makeDataCallback(selectedStreams[i], domain[0] - self.idata.oldOffsets[i], domain[1] - self.idata.oldOffsets[i]));
     }
     if (selectedStreams.length == 0) {
@@ -578,9 +578,9 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
             startIndex--; // plot the previous datapoint so the graph looks continuous (subtract 1000 in case nanoseconds push it into graph)
         }
         if (streamdata.length == 0 || streamdata[Math.min(streamdata.length - 1, startIndex + 1)][0] > endTime) {
-            s3ui.setStreamMessage(self, streams[i].uuid, "No data in specified time range", 4);
+            s3ui.setStreamMessage(self, streams[i].uuid, "No data in specified time range", 5);
         } else {
-            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 4);
+            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 5);
         }
         lastIteration = false;
         inRange = false;
@@ -613,9 +613,9 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
         color = streamSettings[streams[i].uuid].color;
         dataArray.push({color: color, data: [maxval, q3, median], uuid: streams[i].uuid});
         if (inRange) {
-            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 3);
+            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 4);
         } else {
-            s3ui.setStreamMessage(self, streams[i].uuid, "Data outside axis range; try rescaling y-axis", 3);
+            s3ui.setStreamMessage(self, streams[i].uuid, "Data outside axis range; try rescaling y-axis", 4);
         }
     }    
     update = d3.select(self.find("g.chartarea"))
@@ -659,6 +659,7 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
     }
     
     if (self.idata.showingDensity != undefined) {
+        s3ui.setStreamMessage(self, self.idata.showingDensity, "Interval width: " + s3ui.nanosToUnit(Math.pow(2, self.idata.oldData[self.idata.showingDensity][2])), 3);
         self.$("svg.chart g.data-density-plot polyline").remove();
         showDataDensity(self, self.idata.showingDensity);
     }
@@ -734,7 +735,7 @@ function showDataDensity(self, uuid) {
                 break;
             }
         }
-        if (!lastiteration) {
+        if (!lastiteration && ((oldXScale.domain()[1] - oldOffsets[j] - streamdata[i - 1][0]) * 1000000) + streamdata[i - 1][1] > pw) {
             toDraw.push([toDraw[toDraw.length - 1][0], 0]);
             toDraw.push([WIDTH, 0]);
         }
@@ -745,21 +746,18 @@ function showDataDensity(self, uuid) {
         totalmax = 1;
     }
     yScale = d3.scale.log().base(2).domain([0.5, totalmax]).range([45, 0]);
-    j = 0;
-    while (j < toDraw.length) {
+    
+    for (j = 0; j < toDraw.length; j++) {
         if (toDraw[j][0] == 0 && j > 0) {
             toDraw.shift(); // Only draw one point at x = 0; there may be more in the array
             j--;
-            continue;
-        } else {
-            if (toDraw[j][1] == 0) {
-                // To plot a density of 0, I'm putting 0.5 into the data so the log scale will work; 
-                toDraw[j][1] = yScale(0.5);
-            } else {
-                toDraw[j][1] = yScale(toDraw[j][1]);
-            }
         }
-        j++;
+        if (toDraw[j][1] == 0) {
+            // To plot a density of 0, I'm putting 0.5 into the data so the log scale will work; 
+            toDraw[j][1] = yScale(0.5);
+        } else {
+            toDraw[j][1] = yScale(toDraw[j][1]);
+        }
     }
     var ddplot = d3.select(self.find("svg.chart g.data-density-plot"));
     ddplot.append("polyline")
