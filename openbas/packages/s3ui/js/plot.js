@@ -59,6 +59,9 @@ function repaintZoom(self) {
 
 function cacheData(self, uuid, drawID, pwe, startTime, endTime) {
     var sideCache = endTime - startTime;
+    if (drawID != self.idata.drawRequestID) {
+        return;
+    }
     s3ui.ensureData(self, uuid, pwe, startTime - sideCache, startTime,
         function () {
             if (drawID != self.idata.drawRequestID) {
@@ -553,10 +556,11 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
     var lastIteration;
     var color;
     var mint, maxt;
-    var inRange;
+    var outOfRange, noData;
     var WIDTH = self.idata.WIDTH;
     var HEIGHT = self.idata.HEIGHT;
     var pixelw = (domain[1] - domain[0]) / WIDTH * 1000000; // pixel width in nanoseconds
+    var currpt;
 
     for (i = 0; i < streams.length; i++) {
         currXPixel = -Infinity;
@@ -577,33 +581,32 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
         if (startIndex > 0 && streamdata[startIndex][0] > startTime - 1) {
             startIndex--; // plot the previous datapoint so the graph looks continuous (subtract 1000 in case nanoseconds push it into graph)
         }
-        if (streamdata.length == 0 || streamdata[Math.min(streamdata.length - 1, startIndex + 1)][0] > endTime) {
+        lastIteration = false;
+        outOfRange = true;
+        noData = true;
+        for (j = startIndex; j < streamdata.length; j++) {
+            currpt = streamdata[j];
+            xPixel = xScale(currpt[0] + offsets[i]);
+            // correct for nanoseconds
+            xPixel += (currpt[1] / pixelw);
+            mint = yScale(currpt[2]);
+            minval.push(xPixel + "," + mint);
+            q1.push(xPixel + "," + yScale(currpt[3]));
+            median.push(xPixel + "," + yScale(currpt[4]));
+            q3.push(xPixel + "," + yScale(currpt[5]));
+            maxt = yScale(currpt[6]);
+            maxval.push(xPixel + "," + maxt);
+            if (xPixel >= WIDTH) {
+                break;
+            } else if (xPixel >= 0) {
+                outOfRange = outOfRange && (mint <= 0 || mint >= HEIGHT) && (maxt <= 0 || maxt >= HEIGHT) && (mint < HEIGHT || maxt > 0);
+                noData = false;
+            }
+        }
+        if (noData) {
             s3ui.setStreamMessage(self, streams[i].uuid, "No data in specified time range", 5);
         } else {
             s3ui.setStreamMessage(self, streams[i].uuid, undefined, 5);
-        }
-        lastIteration = false;
-        inRange = false;
-        for (j = startIndex; j < streamdata.length; j++) {
-            xPixel = xScale(streamdata[j][0] + offsets[i]);
-            // correct for nanoseconds
-            xPixel += (streamdata[j][1] / pixelw);
-            mint = yScale(streamdata[j][2]);
-            minval.push(xPixel + "," + mint);
-            q1.push(xPixel + "," + yScale(streamdata[j][3]));
-            median.push(xPixel + "," + yScale(streamdata[j][4]));
-            q3.push(xPixel + "," + yScale(streamdata[j][5]));
-            maxt = yScale(streamdata[j][6]);
-            maxval.push(xPixel + "," + maxt);
-            if (!inRange && xPixel >= 0 && xPixel <= WIDTH) {
-                inRange = (mint > 0 && mint < HEIGHT) || (maxt > 0 && maxt < HEIGHT) || (mint >= HEIGHT && maxt <= 0);
-            }
-            if (lastIteration) {
-                break;
-            }
-            if (xPixel >= self.idata.WIDTH) {
-                lastIteration = true; // Include one point past the end so the graph looks continuous
-            }
         }
         minval.reverse();
         q1.reverse();
@@ -612,10 +615,10 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
         maxval = maxval.join(" ") + " " + minval.join(" ");
         color = streamSettings[streams[i].uuid].color;
         dataArray.push({color: color, data: [maxval, q3, median], uuid: streams[i].uuid});
-        if (inRange) {
-            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 4);
-        } else {
+        if (outOfRange) {
             s3ui.setStreamMessage(self, streams[i].uuid, "Data outside axis range; try rescaling y-axis", 4);
+        } else {
+            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 4);
         }
     }    
     update = d3.select(self.find("g.chartarea"))
