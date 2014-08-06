@@ -409,7 +409,7 @@ function drawYAxes(self, data, streams, streamSettings, startDate, endDate, xSca
             streamdata = data[axis.streams[j].uuid][1];
             for (k = 0; k < streamdata.length; k++) {
                 datapointmin = streamdata[k][2];
-                datapointmax = streamdata[k][6];
+                datapointmax = streamdata[k][4];
                 if (!(totalmin <= datapointmin)) {
                     totalmin = datapointmin;
                 }
@@ -546,7 +546,7 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
     var uuid;
     var dataArray = [];
     var yScale;
-    var minval, q1, median, q3, maxval;
+    var minval, mean, maxval;
     var subsetdata;
     var scaledX;
     var startIndex;
@@ -570,9 +570,7 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
         }
         streamdata = data[streams[i].uuid][1];
         minval = [];
-        q1 = [];
-        median = [];
-        q3 = [];
+        mean = [];
         maxval = [];
         yScale = axisData[streamSettings[streams[i].uuid].axisid][2];
         startTime = domain[0].getTime() - offsets[i];
@@ -591,10 +589,8 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
             xPixel += (currpt[1] / pixelw);
             mint = yScale(currpt[2]);
             minval.push(xPixel + "," + mint);
-            q1.push(xPixel + "," + yScale(currpt[3]));
-            median.push(xPixel + "," + yScale(currpt[4]));
-            q3.push(xPixel + "," + yScale(currpt[5]));
-            maxt = yScale(currpt[6]);
+            mean.push(xPixel + "," + yScale(currpt[3]));
+            maxt = yScale(currpt[4]);
             maxval.push(xPixel + "," + maxt);
             if (xPixel >= WIDTH) {
                 break;
@@ -609,12 +605,10 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
             s3ui.setStreamMessage(self, streams[i].uuid, undefined, 5);
         }
         minval.reverse();
-        q1.reverse();
-        median = median.join(" ");
-        q3 = q3.join(" ") + " " + q1.join(" ");
+        mean = mean.join(" ");
         maxval = maxval.join(" ") + " " + minval.join(" ");
         color = streamSettings[streams[i].uuid].color;
-        dataArray.push({color: color, data: [maxval, q3, median], uuid: streams[i].uuid});
+        dataArray.push({color: color, data: [maxval, mean], uuid: streams[i].uuid});
         if (outOfRange) {
             s3ui.setStreamMessage(self, streams[i].uuid, "Data outside axis range; try rescaling y-axis", 4);
         } else {
@@ -632,7 +626,7 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
         update
             .attr("class", function (dataObj) { return "series-" + dataObj.uuid; })
             .attr("stroke", function (d) { return d.color; })
-            .attr("stroke-self.idata.WIDTH", 1)
+            .attr("stroke-width", 1)
             .attr("fill", function (d) { return d.color; })
             .attr("fill-opacity", 0.3);
     }
@@ -649,7 +643,7 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
       .append("polyline");
     
     update
-        .attr("class", function (d, i) { return i == 2 ? "streamMean" : "streamRange"; })
+        .attr("class", function (d, i) { return i == 1 ? "streamMean" : "streamRange"; })
         .attr("points", function (d) { return d; });
         
     update.exit()
@@ -703,7 +697,7 @@ function showDataDensity(self, uuid) {
         if (startIndex > 0 && streamdata[startIndex][0] > startTime) {
             startIndex--;
         }
-        totalmax = streamdata[startIndex][7];
+        totalmax = streamdata[startIndex][5];
         lastiteration = false;
         for (var i = startIndex; i < streamdata.length; i++) {
             xPixel = oldXScale(streamdata[i][0] + oldOffsets[j]);
@@ -723,16 +717,16 @@ function showDataDensity(self, uuid) {
                     if (i == startIndex) {
                         toDraw.pop();
                     }
-                    toDraw.push([prevIntervalEnd, streamdata[i - 1][7]]);
+                    toDraw.push([prevIntervalEnd, streamdata[i - 1][5]]);
                 }
                 toDraw.push([prevIntervalEnd, 0]);
                 toDraw.push([xPixel, 0]);
             }
             if (!lastiteration) {
-                toDraw.push([xPixel, streamdata[i][7]]);
+                toDraw.push([xPixel, streamdata[i][5]]);
             }
-            if (!(streamdata[i][7] <= totalmax)) {
-                totalmax = streamdata[i][7];
+            if (!(streamdata[i][5] <= totalmax)) {
+                totalmax = streamdata[i][5];
             }
             if (lastiteration) {
                 break;

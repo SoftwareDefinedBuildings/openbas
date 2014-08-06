@@ -38,11 +38,13 @@ def get_smapx_data(starttime, endtime, unit, pw, hole):
     
     rv = []
     ival = 2 ** pw
-    starttime = starttime - ival/2 # so now they're the start and end relative to the start of the interval, not the middle
-    endtime = endtime - ival/2
-    i = int(math.ceil(float(starttime) / ival)) * ival # get the interval that starts after starttime
+    starttime >>= pw
+    starttime <<= pw
+    endtime >>= pw
+    endtime <<= pw
+    i = starttime # start of the first interval
     k = int(math.ceil(float(i) / 1000000)) * 1000000 # get the first millisecond after the start of the interval
-    while i < endtime:
+    while i <= endtime:
         # We are imitating final data structure
         # max, min, mean, count
         krv = []
@@ -55,7 +57,7 @@ def get_smapx_data(starttime, endtime, unit, pw, hole):
         # I guess I could use quickselect to get the quartiles, but this program doesn't have to be efficient
         medtime = i + (ival / 2);
         if len(krv) > 0:
-            e = [int(medtime / 1000000), int(medtime % 1000000), numpy.min(krv), numpy.percentile(krv, 25), numpy.median(krv), numpy.percentile(krv, 75), numpy.max(krv), len(krv)]
+            e = [int(medtime / 1000000), int(medtime % 1000000), numpy.min(krv), numpy.mean(krv), numpy.max(krv), len(krv)]
             rv.append(e)
         i += ival
     # ival is the stepsize

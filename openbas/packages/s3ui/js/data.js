@@ -141,7 +141,18 @@ function ensureData(self, uuid, pointwidthexp, startTime, endTime, callback) {
                     insertData(self, uuid, cache, JSON.parse(streamdata)[0].XReadings, queryStart, queryEnd, callback);
                 }
             };
-        var url = 'http://bunker.cs.berkeley.edu/backend/api/data/uuid/' + uuid + '?starttime=' + queryStart + '000000&endtime=' + queryEnd + '000000&unit=ns&pw=' + pointwidthexp; // We add the "000000" to convert to nanoseconds
+        /* queryStart and queryEnd are the start and end of the query I want,
+        in terms of the midpoints of the intervals I get back; the real archiver
+        will give me back all intervals that touch the query range. So I shrink
+        the range by half a pointwidth on each side to compensate for that. */
+        var halfpwnanos = Math.pow(2, pointwidthexp - 1) - 1;
+        var halfpwmillisStart = Math.floor(halfpwnanos / 1000000);
+        var halfpwnanosStart = halfpwnanos - (1000000 * halfpwmillisStart);
+        var halfpwmillisEnd = Math.ceil(halfpwnanos / 1000000);
+        var halfpwnanosEnd = (1000000 * halfpwmillisEnd) - halfpwnanos;
+        halfpwnanosStart = (1000000 + halfpwnanosStart).toString().slice(1);
+        halfpwnanosEnd = (1000000 + halfpwnanosEnd).toString().slice(1);
+        var url = 'http://bunker.cs.berkeley.edu/backend/api/data/uuid/' + uuid + '?starttime=' + (queryStart + halfpwmillisStart) + halfpwnanosStart + '&endtime=' + (queryEnd - halfpwmillisEnd) + halfpwnanosEnd + '&unit=ns&pw=' + pointwidthexp; // We add the "000000" to convert to nanoseconds
         s3ui.getURL(url, urlCallback, 'text');
     }
 }
