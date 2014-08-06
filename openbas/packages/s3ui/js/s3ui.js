@@ -21,7 +21,7 @@ Template.s3plot.rendered = function () {
         s3ui.init_frontend(self);
         s3ui.init_control(self);
         
-        if (self.data !== null && typeof self.data === "object" && typeof self.data[0] === "object" && typeof self.data[1] === "function") {
+        if (self.data !== null && typeof self.data === "object" && typeof self.data[0] === "object" && typeof self.data[1] === "function" && typeof self.data[2] === "function") {
             init_visuals(self, self.data[0]);
             if (self.data[0].width != undefined) {
                 self.find("svg.chart").setAttribute("width", self.data[0].width);
@@ -34,7 +34,10 @@ Template.s3plot.rendered = function () {
             self.imethods.changeVisuals = function (options) {
                     init_visuals(self, options);
                 };
+            self.idata.loadedTreeCallback = self.data[2];
             self.data[1](self);
+        } else {
+            self.idata.loadedTreeCallback = false;
         }
         
         __init__(self);
@@ -54,6 +57,7 @@ function init_visuals(self, options) {
     setVisibility(self, options, "div.timeSelection", "hide_time_selection");
     setVisibility(self, options, "div.streamSelection", "hide_stream_tree");
     setVisibility(self, options, "g.plotDirections", "hide_plot_directions");
+    setVisibility(self, options, "button.updateStreamList", "hide_refresh_button");
     
     setCSSRule(self, options, "tr.streamLegend-" + self.idata.instanceid + " select.axis-select { display: none; }", "hide_axis_selection");
     setCSSRule(self, options, "tr.streamLegend-" + self.idata.instanceid + " span.simplecolorpicker { pointer-events: none; }", "disable_color_selection");
@@ -134,6 +138,7 @@ function __init__(self) {
     self.find(".startdate").id = "start" + self.idata.instanceid;
     self.find(".enddate").id = "end" + self.idata.instanceid;
     self.$(".datefield").AnyTime_picker({format: self.idata.dateFormat});
+    self.$(".streamTree").on("ready.jstree", self.idata.loadedTreeCallback);
     s3ui.updateStreamList(self);
     if (self.find(".automaticAxisSetting").checked) { // Some browsers may fill in this value automatically after refresh
         self.idata.automaticAxisUpdate = true;

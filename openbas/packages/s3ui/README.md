@@ -15,8 +15,9 @@ operator in a data context:
 {{/with}}</code></pre>
 
 If "somecontext" is an array (or array-like object) with an object at index 0
-and a function at index 1, the object at index 0 is interpreted as specifying
-parameters and the function at index 1 is interpreted as a callback function.
+and functions at indices 2 and 3, the object at index 0 is interpreted as
+specifying parameters and the function at indices 1 and 2 are interpreted as
+callback functions.
 
 The object of parameters may have the following properties (all optional):
 
@@ -33,18 +34,23 @@ The object of parameters may have the following properties (all optional):
 * hide\_time\_selection - TRUE if the menu to select the start and end times is to be hidden. Defaults to FALSE.
 * hide\_stream\_tree - TRUE if the tree used to select streams is to be hidden. Defaults to FALSE.
 * hide\_plot\_directions - TRUE if the directions for how to use the interface are to be hidden. Defaults to FALSE
+* hide\_refresh\button - TRUE if the "Refresh Stream Tree" button is to be hidden. Defaults to FALSE.
 * hide\_axis\_selection - TRUE if the axis selection menu within the legend is to be hidden. Defaults to FALSE.
 * disable\_color\_selection - TRUE if the color selection menu within the legend is to be disabled. Defaults to FALSE.
 * width - Specifies the width of the chart area (_not_ the whole graph). Defaults to 600.
 * height - Specifies the height of the chart area (_not_ the whole graph). Defaults to 300.
 
 When the graph has been displayed, but before any interactivity is added, the
-callback function is called. It is invoked with a single argument, namely the
-template instance. The callback function is the mechanism through which the
-template instance is made available. It can be used to programmatically change
+first callback function is invoked with a single argument, namely the template
+instance. The callback function is the mechanism through which the template
+instance is made available. The function can be used to programmatically change
 the settings (useful when settings have been hidden from the user but still
 need to be manipulated) and even change some of the parameters the graph was
 instantiated with.
+
+The second callback function is called when the tree of streams is fully
+loaded for the first time. This is useful for programmatically initializing the
+graph, as streams cannot be selected until the tree of streams is loaded.
 
 The "idata" property of the template instance is an object that stores the
 instance fields  of the object (i.e., the variables used by the graph to
