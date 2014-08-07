@@ -9,6 +9,8 @@ function init_data(self) {
     // The total number of data points that have been cached.
     self.idata.loadedData = 0;
     self.idata.loadedStreams = {}; // maps a stream's uuid to the total number of points that have been cached for that stream
+    
+    self.idata.dataURLStart = 'http://bunker.cs.berkeley.edu/backend/api/data/uuid/';
 }
 
 /* The start time and end time are in MILLISECONDS, not NANOSECONDS! */
@@ -152,7 +154,7 @@ function ensureData(self, uuid, pointwidthexp, startTime, endTime, callback) {
         var halfpwnanosEnd = (1000000 * halfpwmillisEnd) - halfpwnanos;
         halfpwnanosStart = (1000000 + halfpwnanosStart).toString().slice(1);
         halfpwnanosEnd = (1000000 + halfpwnanosEnd).toString().slice(1);
-        var url = 'http://bunker.cs.berkeley.edu/backend/api/data/uuid/' + uuid + '?starttime=' + (queryStart + halfpwmillisStart) + halfpwnanosStart + '&endtime=' + (queryEnd - halfpwmillisEnd) + halfpwnanosEnd + '&unit=ns&pw=' + pointwidthexp; // We add the "000000" to convert to nanoseconds
+        var url = self.idata.dataURLStart + uuid + '?starttime=' + (queryStart + halfpwmillisStart) + halfpwnanosStart + '&endtime=' + (queryEnd - halfpwmillisEnd) + halfpwnanosEnd + '&unitoftime=ns&pw=' + pointwidthexp; // We add the "000000" to convert to nanoseconds
         s3ui.getURL(url, urlCallback, 'text');
     }
 }

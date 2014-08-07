@@ -50,7 +50,7 @@ if (Meteor.isClient) {
     }
   });
   
-  Template.smap_plot.plot_data = [{ hide_main_title: true, hide_graph_title: true, hide_graph_export: true, hide_stream_legend: false, disable_color_selection: true, hide_axis_legend: true, hide_axis_selection: false, hide_settings_title: true, hide_automatic_update: true, hide_apply_button: true, hide_reset_button: true, hide_info_bar: true, hide_time_selection: true, hide_plot_directions: true, hide_stream_tree: false, width: 900, height: 400 }, function (inst) { instances.push(inst); /*inst.imethods.selectStreams(['fake-data']);*/ }, function () { instances[instances.length - 1].imethods.selectStreams(['fake-data2']); }];
+  Template.smap_plot.plot_data = [{ hide_stream_tree: true, dataURLStart: 'http://miranda.cs.berkeley.edu:9000/data/uuid/' }, function (inst) { instances.push(inst); inst.imethods.selectMissingStreams([{"Path": "/tests/Data Range Test", "Metadata": {"SourceName": "Fake Data", "Instrument": {"ModelName": "A Python Program"}}, "uuid": "189d722c-44d4-4db7-9799-88f063aa2242", "Properties": {"UnitofTime": "ns", "Timezone": "America/Phoenix", "UnitofMeasure": "deg", "ReadingType": "long"}}]); }, function () { instances[instances.length - 1].imethods.selectStreams(['fake-data2']); }];
 }
 
 if (Meteor.isServer) {

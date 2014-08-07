@@ -21,6 +21,8 @@ Template.s3plot.rendered = function () {
         s3ui.init_frontend(self);
         s3ui.init_control(self);
         
+        var c1, c2;
+        
         if (self.data !== null && typeof self.data === "object" && typeof self.data[0] === "object" && typeof self.data[1] === "function" && typeof self.data[2] === "function") {
             init_visuals(self, self.data[0]);
             if (self.data[0].width != undefined) {
@@ -31,16 +33,23 @@ Template.s3plot.rendered = function () {
                 self.find("svg.chart").setAttribute("height", self.data[0].height);
                 self.idata.HEIGHT = self.data[0].height;
             }
+            if (self.data[0].dataURLStart != undefined) {
+                self.idata.dataURLStart = self.data[0].dataURLStart;
+            }
+            if (self.data[0].tagsURL != undefined) {
+                self.idata.tagsURL = self.data[0].tagsURL;
+            }
             self.imethods.changeVisuals = function (options) {
                     init_visuals(self, options);
                 };
-            self.idata.loadedTreeCallback = self.data[2];
-            self.data[1](self);
+            c1 = self.data[1];
+            c2 = self.data[2];
         } else {
-            self.idata.loadedTreeCallback = false;
+            c1 = function () {};
+            c2 = false;
         }
         
-        __init__(self);
+        __init__(self, c1, c2);
     };
     
 function init_visuals(self, options) {
@@ -84,7 +93,19 @@ function setCSSRule(self, options, rule, attr) {
     }
 }
     
-function __init__(self) {    
+function __init__(self, c1, c2) {
+    // Finish building the graph components
+    s3ui.addYAxis(self);
+    self.$(".removebutton").remove(); // Get rid of the remove button for the first axis
+    
+    // first callback
+    c1(self);
+    
+    // For some reason, Any+Time requires the text elements to have IDs.
+    // So, I'm going to give them IDs that are unique across all instances
+    self.find(".startdate").id = "start" + self.idata.instanceid;
+    self.find(".enddate").id = "end" + self.idata.instanceid;
+    
     // Event handlers are added programmatically
     self.find(".makeGraph").onclick = function () {
             self.find(".download-graph").innerHTML = 'Creating image...';
@@ -133,12 +154,8 @@ function __init__(self) {
             s3ui.updateStreamList(self);
         };
     
-    // For some reason, Any+Time requires the text elements to have IDs.
-    // So, I'm going to give them IDs that are unique across all instances
-    self.find(".startdate").id = "start" + self.idata.instanceid;
-    self.find(".enddate").id = "end" + self.idata.instanceid;
     self.$(".datefield").AnyTime_picker({format: self.idata.dateFormat});
-    self.$(".streamTree").on("ready.jstree", self.idata.loadedTreeCallback);
+    self.$(".streamTree").on("ready.jstree", c2);
     s3ui.updateStreamList(self);
     if (self.find(".automaticAxisSetting").checked) { // Some browsers may fill in this value automatically after refresh
         self.idata.automaticAxisUpdate = true;
@@ -147,8 +164,6 @@ function __init__(self) {
         self.idata.automaticAxisUpdate = false;
         self.idata.selectedStreamsBuffer = [];
     }
-    s3ui.addYAxis(self);
-    self.$(".removebutton").remove(); // Get rid of the remove button for the first axis
     self.find(".timezoneSelect").onchange(); // In case the browser selects "Other:" after refresh
     self.idata.addedStreams = false;
     self.idata.changedTimes = false;

@@ -19,9 +19,9 @@ def f(t):
     t = float(t) #Add scale here if required
     return 100*math.sin(t/100.0) + 10*math.sin(t/10.0) + 5*math.sin(t) + math.sin(10*t)
 
-def get_smapx_data(starttime, endtime, unit, pw, hole):
+def get_smapx_data(starttime, endtime, unitoftime, pw, hole):
     #Validate inputs
-    if unit != "ns":
+    if unitoftime != "ns":
         raise SMAPXexception("invalid unit of time")
     try:
         starttime = int(starttime)

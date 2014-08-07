@@ -13,6 +13,8 @@ function init_frontend(self) {
     self.idata.otherChange = undefined;
     self.idata.automaticAxisUpdate = false; // True if axes will be updated without the need for an "Update Axes" button
     self.idata.streamTree = undefined;
+    
+    self.idata.tagsURL = 'http://bunker.cs.berkeley.edu/backend/api/tags';
 }
 
 function updateStreamList(self) {
