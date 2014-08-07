@@ -108,6 +108,8 @@ function validateContiguous(cacheEntry, pwe) {
    that stream will not result in a GET request (so this function doesn't fall
    behind user input). */
 function ensureData(self, uuid, pointwidthexp, startTime, endTime, callback) {
+    console.log(startTime);
+    console.log(endTime);
     var dataCache = self.idata.dataCache;
     // Create the mapping for this stream if it isn't already present
     if (!dataCache.hasOwnProperty(uuid)) {
@@ -152,7 +154,7 @@ function ensureData(self, uuid, pointwidthexp, startTime, endTime, callback) {
         var halfpwnanosEnd = (1000000 * halfpwmillisEnd) - halfpwnanos;
         halfpwnanosStart = (1000000 + halfpwnanosStart).toString().slice(1);
         halfpwnanosEnd = (1000000 + halfpwnanosEnd).toString().slice(1);
-        var url = 'http://bunker.cs.berkeley.edu/backend/api/data/uuid/' + uuid + '?starttime=' + (queryStart + halfpwmillisStart) + halfpwnanosStart + '&endtime=' + (queryEnd - halfpwmillisEnd) + halfpwnanosEnd + '&unit=ns&pw=' + pointwidthexp; // We add the "000000" to convert to nanoseconds
+        var url = 'http://miranda.cs.berkeley.edu:9000/data/uuid/' + uuid + '?starttime=' + (queryStart + halfpwmillisStart) + halfpwnanosStart + '&endtime=' + (queryEnd - halfpwmillisEnd) + halfpwnanosEnd + '&unitoftime=ns&pw=' + pointwidthexp; // We add the "000000" to convert to nanoseconds
         s3ui.getURL(url, urlCallback, 'text');
     }
 }
