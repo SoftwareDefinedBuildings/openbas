@@ -76,3 +76,4 @@ The bound methods provided are:
 * resetZoom() - Programmatically clicks the "Reset Zoom" button.
 * toggleAutomaticUpdate() - Programmatically checks or unchecks the "Automatically apply stream removals and changes to axis settings" checkbox.
 * changeVisuals(options) - Reinitializes the visuals with the specified OPTIONS, according to the parameters specified (from the list above). The only differences between this function and the instantiation of the graph is that the "width" and "height" properties are ignored, and the new default values are those currently applied.
+* selectMissingStreams(data\_lst) - Given DATA\_LST, an array of stream objects not present in the stream tree, selects the provided stream objects for plotting (makes it as if they were checked if they were in the stream tree).

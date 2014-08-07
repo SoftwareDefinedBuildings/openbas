@@ -56,7 +56,8 @@ function updateStreamList(self) {
 }
 
 /* Adds or removes (depending on the value of SHOW) the stream
-described by STREAMDATA to or from the legend. */
+    described by STREAMDATA to or from the legend. UPDATE is true if
+    applySettings should be immediately called after insertion or removal. */
 function toggleLegend (self, show, streamdata, update) {
     if (update == undefined) {
         update = true;

@@ -20,6 +20,7 @@ function init_control(self) {
     self.imethods.applyAllSettings = bind_method(applyAllSettings, self);
     self.imethods.resetZoom = function () { return s3ui.resetZoom(self); };
     self.imethods.toggleAutomaticUpdate = bind_method(toggleAutomaticUpdate, self);
+    self.imethods.selectMissingStreams = bind_method(selectMissingStreams, self);
 }
 
 /* Given UUIDS, which is an array of UUIDs, selects the corresponding streams
@@ -195,6 +196,15 @@ function toggleAutomaticUpdate() {
     var checkbox = this.find(".automaticAxisSetting");
     checkbox.checked = !checkbox.checked;
     checkbox.onchange();
+}
+
+/* Given DATA_LST, a list of stream objects that are not in the stream tree,
+   selects those stream objects to plot. */
+function selectMissingStreams(data_lst) {
+    for (var i = 0; i < data_lst.length; i++) {
+        s3ui.toggleLegend(this, true, data_lst[i], false);
+    }
+    s3ui.applySettings(this);
 }
 
 s3ui.init_control = init_control;
