@@ -19,6 +19,7 @@ Template.s3plot.rendered = function () {
         s3ui.init_plot(self);
         s3ui.init_data(self);
         s3ui.init_frontend(self);
+        s3ui.init_streamtree(self);
         s3ui.init_control(self);
         
         var c1, c2;
@@ -98,9 +99,6 @@ function __init__(self, c1, c2) {
     s3ui.addYAxis(self);
     self.$(".removebutton").remove(); // Get rid of the remove button for the first axis
     
-    // first callback
-    c1(self);
-    
     // For some reason, Any+Time requires the text elements to have IDs.
     // So, I'm going to give them IDs that are unique across all instances
     self.find(".startdate").id = "start" + self.idata.instanceid;
@@ -155,8 +153,6 @@ function __init__(self, c1, c2) {
         };
     
     self.$(".datefield").AnyTime_picker({format: self.idata.dateFormat});
-    self.$(".streamTree").on("ready.jstree", c2);
-    s3ui.updateStreamList(self);
     if (self.find(".automaticAxisSetting").checked) { // Some browsers may fill in this value automatically after refresh
         self.idata.automaticAxisUpdate = true;
         self.idata.selectedStreamsBuffer = self.idata.selectedStreams;
@@ -169,4 +165,8 @@ function __init__(self, c1, c2) {
     self.idata.changedTimes = false;
     self.idata.otherChange = false;
     s3ui.updatePlotMessage(self);
+    
+    self.$(".streamTree").on("ready.jstree", c2);
+    s3ui.updateStreamList(self);
+    c1(self);
 }

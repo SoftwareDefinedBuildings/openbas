@@ -5,8 +5,6 @@ function bind_method(func, self) {
 }
 
 function init_control(self) {
-    self.imethods.selectStreams = bind_method(selectStreams, self);
-    self.imethods.deselectStreams = bind_method(deselectStreams, self);
     self.imethods.setStartTime = bind_method(setStartTime, self);
     self.imethods.setEndTime = bind_method(setEndTime, self);
     self.imethods.setTimezone = bind_method(setTimezone, self);
@@ -20,19 +18,8 @@ function init_control(self) {
     self.imethods.applyAllSettings = bind_method(applyAllSettings, self);
     self.imethods.resetZoom = function () { return s3ui.resetZoom(self); };
     self.imethods.toggleAutomaticUpdate = bind_method(toggleAutomaticUpdate, self);
-    self.imethods.selectMissingStreams = bind_method(selectMissingStreams, self);
-}
-
-/* Given UUIDS, which is an array of UUIDs, selects the corresponding streams
-   in the stream selection tree. */
-function selectStreams(uuids) {
-    this.idata.streamTree.select_node(uuids);
-}
-
-/* Given UUIDS, which is an array of UUIDs, deselects the corresponding streams
-   in the stream selection tree. */
-function deselectStreams(uuids) {
-    this.idata.streamTree.deselect_node(uuids);
+    self.imethods.selectStreams = bind_method(selectStreams, self);
+    self.imethods.deselectStreams = bind_method(deselectStreams, self);
 }
 
 /* Given DATE, a date object, sets the start time to be the day/time it
@@ -198,11 +185,76 @@ function toggleAutomaticUpdate() {
     checkbox.onchange();
 }
 
-/* Given DATA_LST, a list of stream objects that are not in the stream tree,
-   selects those stream objects to plot. */
-function selectMissingStreams(data_lst) {
+/* Given DATA_LST, a list of stream objects, selects the corresponding streams.
+   If present in the tree, selects them in the tree. This function works even
+   before the tree is loaded. */
+function selectStreams(data_lst) {
+     var node;
+     var source;
+     var path;
+     var streamTree = this.idata.streamTree
+     for (var i = 0; i < data_lst.length; i++) {
+         source = data_lst[i].Metadata.SourceName;
+         path = data_lst[i].Path;
+         node = this.idata.leafNodes[source + path];
+         if (node != undefined) {
+             node = streamTree.get_node(node);
+         }
+         if (node == undefined || node === false) { // check if it appears in the tree. if not ...
+             if (this.idata.initiallySelectedStreams.hasOwnProperty(source)) {
+                 var entry = this.idata.initiallySelectedStreams[source];
+                 entry.count++;
+                 entry[path] = data_lst[i];
+             } else {
+                 var newObj = { count: 1 };
+                 newObj[path] = data_lst[i];
+                 this.idata.initiallySelectedStreams[source] = newObj;
+             }
+             s3ui.toggleLegend(this, true, data_lst[i], false);
+             source = this.idata.rootNodes[source];
+             if (source == undefined) {
+                 continue;
+             }
+             node = streamTree.get_node(source);
+             if (node.children.length == 0) {
+                 streamTree.load_node(source); // It will be automatically selected if it is there
+             }
+         } else {
+             streamTree.select_node(node, false, true);
+         }
+     }
+     s3ui.applySettings(this);
+}
+
+/* Given DATA_LST, a list of stream objects, deselects the corresponding
+   streams and removes them from the stream selection tree (if it has been
+   loaded already). This function works even before the tree is loaded. */
+function deselectStreams(data_lst) {
+    var node;
+    var source;
+    var streamTree = this.idata.streamTree;
+    var initiallySelectedStreams = this.idata.initiallySelectedStreams;
     for (var i = 0; i < data_lst.length; i++) {
-        s3ui.toggleLegend(this, true, data_lst[i], false);
+        node = this.idata.leafNodes[data_lst[i].Metadata.SourceName + data_lst[i].Path];
+        if (node != undefined) {
+            node = streamTree.get_node(node);
+        }
+        if (node == undefined || node === false || node.data.streamdata == undefined) { // check if it has been *loaded* in the tree; if so, it's checked state is correct
+            node = data_lst[i];
+            var sourceName = node.Metadata.SourceName;
+            var path = node.Path;
+            if (initiallySelectedStreams.hasOwnProperty(sourceName) && initiallySelectedStreams[sourceName].hasOwnProperty(path)) {
+                initiallySelectedStreams[sourceName].count--;
+                if (initiallySelectedStreams[sourceName].count == 0) {
+                    delete initiallySelectedStreams[sourceName];
+                } else {
+                    delete initiallySelectedStreams[sourceName][path];
+                }
+            }
+            s3ui.toggleLegend(this, false, node, false);
+        } else {
+            streamTree.deselect_node(node);
+        }
     }
     s3ui.applySettings(this);
 }

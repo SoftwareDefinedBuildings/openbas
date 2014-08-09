@@ -1,6 +1,7 @@
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from SocketServer import ThreadingMixIn
 import os
+import requests
 import string
 import sys
 import urllib
@@ -39,7 +40,26 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type','text/html')
         self.end_headers()
         print self.query
-        if 'fake-data' in self.query:
+        if self.query.startswith("SENDPOST"):
+            parts = self.query.split(' ');
+            url = parts[1];
+            newquery = ' '.join(parts[2: ])
+            if local:
+                if newquery == 'select distinct Metadata/SourceName':
+                    self.wfile.write('["Fake Data"]')
+                elif newquery == 'select distinct Path where Metadata/SourceName = "Fake Data"':
+                    self.wfile.write('["/tests/Data Range Test", "/tests/Data Range Test 2"]')
+                elif newquery == 'select * where Metadata/SourceName = "Fake Data" and Path = "/tests/Data Range Test"':
+                    self.wfile.write('[{"Path": "/tests/Data Range Test", "Metadata": {"SourceName": "Fake Data", "Instrument": {"ModelName": "A Python Program"}}, "uuid": "fake-data", "Properties": {"UnitofTime": "ns", "Timezone": "America/Phoenix", "UnitofMeasure": "N", "ReadingType": "long"}}]')
+                elif newquery == 'select * where Metadata/SourceName = "Fake Data" and Path = "/tests/Data Range Test 2"':
+                    self.wfile.write('[{"Path": "/tests/Data Range Test 2", "Metadata": {"SourceName": "Fake Data", "Instrument": {"ModelName": "A Python Program"}}, "uuid": "fake-data2", "Properties": {"UnitofTime": "ns", "Timezone": "UTC", "UnitofMeasure": "N", "ReadingType": "long"}}]')
+                else:
+                    self.wfile.write('')
+            else:
+                r = requests.post(url, data=newquery)
+                print r.text
+                self.wfile.write(r.text)
+        elif 'fake-data' in self.query:
             qIndex = self.query.find('?')
             args = self.query[qIndex+1:]
             kvpairs = map(lambda x: x.split('='), args.split('&'))

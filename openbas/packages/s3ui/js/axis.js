@@ -25,7 +25,7 @@ function changeAxis(self, stream, fromAxisID, toAxisID, updateGraph) {
     if (fromAxisID != null) {
         var streamList = self.idata.axisMap[fromAxisID].streams;
         for (var i = 0; i < streamList.length; i++) {
-            if (streamList[i] == stream) {
+            if (streamList[i].uuid == stream.uuid) {
                 streamList.splice(i, 1);
                 break;
             }

@@ -3,15 +3,25 @@ function getFilepath(datum) {
     return (sourceName == undefined ? '<no source name>' : sourceName) + datum.Path;
 }
 
-function getInfo(datum, linebreak) {
+function getInfo (datum, linebreak) {
     if (linebreak == undefined) {
         linebreak = "<br>";
     }
-    var base = 'UUID: ' + datum.uuid;
-    for (prop in datum.Properties) {
-        base += linebreak + prop + ': ' + datum.Properties[prop];
+    return getInfoHelper(datum, "", linebreak);
+}
+
+function getInfoHelper(datum, prefix, linebreak) {
+    var toReturn = "";
+    for (var prop in datum) {
+        if (datum.hasOwnProperty(prop)) {
+            if (typeof datum[prop] == "object") {
+                toReturn += getInfoHelper(datum[prop], prefix + prop + "/", linebreak);
+            } else {
+                toReturn += prefix + prop + ": " + datum[prop] + linebreak;
+            }
+        }
     }
-    return base;
+    return toReturn;
 }
 
 /** Normally I'd just send a GET request with AJAX, but instead
@@ -88,90 +98,9 @@ function nanosToUnit(numValue) {
     return numValue + unit;
 }
 
-// The following functions are useful for the tree for selecting streams
-
-/* Converts a list of stream objects into a tree (i.e. a nested object
-structure that will work with jsTree.) */
-function listToTree(streamList) {
-    var rootNodes = []; // An array of root nodes
-    var rootCache = {}; // A map of names of sources to the corresponding object
-    
-    var streamObj;
-    var hierarchy;
-    var currNodes;
-    var currCache;
-    var levelName;
-    var childNode;
-    for (var i = 0; i < streamList.length; i++) {
-        streamObj = streamList[i];
-        hierarchy = streamObj.Path.split("/");
-        hierarchy[0] = streamObj.Metadata.SourceName;
-        currNodes = rootNodes;
-        currCache = rootCache;
-        for (var j = 0; j < hierarchy.length; j++) {
-            levelName = hierarchy[j];
-            if (currCache.hasOwnProperty(levelName)) {
-                currNodes = currCache[levelName].children;
-                currCache = currCache[levelName].childCache;
-            } else {
-                childNode = {
-                    text: levelName,
-                    children: [],
-                    childCache: {},
-                    data: {} // the documentation says I can add additional properties directly, but that doesn't seem to work
-                };
-                currNodes.push(childNode);
-                currCache[levelName] = childNode;
-                currNodes = childNode.children;
-                currCache = childNode.childCache;
-                if (j == hierarchy.length - 1) {
-                    childNode.id = streamObj.uuid;
-                    childNode.icon = false;
-                    childNode.data.selected = false;
-                    childNode.data.streamdata = streamObj;
-                }
-            }
-        }
-    }
-    
-    return rootNodes;
-}
-
-/* Given a node, determines the options available to it. */
-function getContextMenu(node, callback) {
-    if (node.data.streamdata == undefined) {
-        return {};
-    } else {
-        return {
-            show: {
-                label: "Show Info",
-                action: function () {
-                        alert(getInfo(node.data.streamdata, "\n"));
-                    }
-            }
-        };
-    }
-}
-
-/* Selects or deselects a node and all of its children, maintaing internal
-   state ONLY (not outward appearance of being checked!) */
-function selectNode(self, tree, select, node) { // unfortunately there's no simple way to differentiate between undetermined and unselected nodes
-    if (node.data.streamdata == undefined) {
-        for (var i = 0; i < node.children.length; i++) {
-            selectNode(self, tree, select, tree.get_node(node.children[i]));
-        }
-    } else if (node.data.selected != select) {
-        node.data.selected = select;
-        s3ui.toggleLegend(self, select, node.data.streamdata, false);
-    }
-}
-
 s3ui.getFilepath = getFilepath;
 s3ui.getInfo = getInfo;
 s3ui.getURL = getURL;
 s3ui.makeMenuMaker = makeMenuMaker;
 s3ui.binSearch = binSearch;
 s3ui.nanosToUnit = nanosToUnit;
-s3ui.listToTree = listToTree;
-s3ui.getContextMenu = getContextMenu;
-s3ui.selectNode = selectNode;

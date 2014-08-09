@@ -12,49 +12,6 @@ function init_frontend(self) {
     self.idata.changedTimes = undefined;
     self.idata.otherChange = undefined;
     self.idata.automaticAxisUpdate = false; // True if axes will be updated without the need for an "Update Axes" button
-    self.idata.streamTree = undefined;
-    
-    self.idata.tagsURL = 'http://bunker.cs.berkeley.edu/backend/api/tags';
-}
-
-function updateStreamList(self) {
-    self.$("span.streamLoading").html("Loading Streams...");
-    s3ui.getURL('http://bunker.cs.berkeley.edu/backend/api/tags', function (data) {
-            self.idata.streamList = JSON.parse(data);
-            
-            self.$("span.streamLoading").html("");
-              
-            if (self.idata.streamTree != undefined) {
-                // Remove everything from legend before destroying tree
-                var roots = self.idata.streamTree.get_node("#").children;
-                for (var i = 0; i < roots.length; i++) {
-                    s3ui.selectNode(self, self.idata.streamTree, false, self.idata.streamTree.get_node(roots[i]));
-                }
-                self.idata.streamTree.destroy(true);
-                s3ui.applySettings(self);
-            }
-            
-            var streamTreeDiv = self.$("div.streamTree");
-            streamTreeDiv.jstree({
-                    core: {
-                        data: s3ui.listToTree(self.idata.streamList)
-                    },
-                    contextmenu: {
-                        select_node: false,
-                        items: s3ui.getContextMenu
-                    },
-                    plugins: ["checkbox", "contextmenu"]
-                });
-            self.idata.streamTree = $.jstree.reference(streamTreeDiv);
-            streamTreeDiv.on("select_node.jstree", function (event, data) {
-                    s3ui.selectNode(self, self.idata.streamTree, true, data.node);
-                    s3ui.applySettings(self);
-                });
-            streamTreeDiv.on("deselect_node.jstree", function (event, data) {
-                    s3ui.selectNode(self, self.idata.streamTree, false, data.node);
-                    s3ui.applySettings(self);
-                });
-        }, "text");
 }
 
 /* Adds or removes (depending on the value of SHOW) the stream
@@ -64,7 +21,11 @@ function toggleLegend (self, show, streamdata, update) {
     if (update == undefined) {
         update = true;
     }
+    var streamSettings = self.idata.streamSettings;
     if (show) {
+        if (streamSettings.hasOwnProperty(streamdata.uuid) && streamSettings[streamdata.uuid].active) {
+            return;
+        }
         self.idata.selectedStreamsBuffer.push(streamdata);
         var row = d3.select(self.find("tbody.legend"))
           .append("tr")
@@ -79,9 +40,9 @@ function toggleLegend (self, show, streamdata, update) {
                   var streamGroup= self.$("g.series-" + streamdata.uuid);
                   streamGroup.attr("stroke", newColor);
                   streamGroup.attr("fill", newColor);
-                  self.idata.streamSettings[streamdata.uuid].color = newColor;
+                  streamSettings[streamdata.uuid].color = newColor;
               };
-        self.idata.streamSettings[streamdata.uuid] = { color: colorMenu[colorMenu.selectedIndex].value, axisid: "y1" }; // axisid is changed
+        streamSettings[streamdata.uuid] = { color: colorMenu[colorMenu.selectedIndex].value, axisid: "y1", active: true }; // axisid is changed
         self.idata.streamMessages[streamdata.uuid] = [{0: ""}, 0];
         var nameElem = row.append("td")
             .html(function (d) { return s3ui.getFilepath(d); })
@@ -132,14 +93,18 @@ function toggleLegend (self, show, streamdata, update) {
             s3ui.applySettings(self);
         }
     } else {
+        if (!streamSettings.hasOwnProperty(streamdata.uuid) || !streamSettings[streamdata.uuid].active) {
+            return;
+        }
         var toRemove = self.find(".legend-" + streamdata.uuid);
         var selectElem = d3.select(toRemove).select('.axis-select').node();
         var oldAxis = selectElem[selectElem.selectedIndex].value;
         s3ui.changeAxis(self, streamdata, oldAxis, null);
         toRemove.parentNode.removeChild(toRemove);
         // we could delete self.idata.streamSettings[streamdata.uuid]; but I want to keep the settings around
+        streamSettings[streamdata.uuid].active = false;
         for (var i = 0; i < self.idata.selectedStreamsBuffer.length; i++) {
-            if (self.idata.selectedStreamsBuffer[i] == streamdata) {
+            if (self.idata.selectedStreamsBuffer[i].uuid == streamdata.uuid) {
                 self.idata.selectedStreamsBuffer.splice(i, 1);
                 break;
             }
@@ -211,7 +176,6 @@ function createPlotDownload(self) {
 }
 
 s3ui.init_frontend = init_frontend;
-s3ui.updateStreamList = updateStreamList;
 s3ui.toggleLegend = toggleLegend;
 s3ui.setStreamMessage = setStreamMessage;
 s3ui.updatePlotMessage = updatePlotMessage;
