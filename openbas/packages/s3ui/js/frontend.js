@@ -51,13 +51,13 @@ function toggleLegend (self, show, streamdata, update) {
                 if (self.idata.oldData.hasOwnProperty(streamdata.uuid)) {
                     self.$("g.series-" + streamdata.uuid).attr({"stroke-width": 3, "fill-opacity": 0.5});
                     var xdomain = self.idata.oldXScale.domain();
-                    setStreamMessage(self, streamdata.uuid, "Interval width: " + s3ui.nanosToUnit(Math.pow(2, self.idata.oldData[streamdata.uuid][2])), 3);
+                    setStreamMessage(self, streamdata.uuid, "Interval width: " + s3ui.nanosToUnit(Math.pow(2, self.idata.oldData[streamdata.uuid][2])), 5);
                     s3ui.showDataDensity(self, streamdata.uuid);
                 }
             };
         nameElem.onmouseout = function () {
                 self.$("g.series-" + streamdata.uuid).attr({"stroke-width": 1, "fill-opacity": 0.3});
-                setStreamMessage(self, streamdata.uuid, undefined, 3);
+                setStreamMessage(self, streamdata.uuid, undefined, 5);
                 s3ui.hideDataDensity(self);
             };
         var selectElem = row.append("td")

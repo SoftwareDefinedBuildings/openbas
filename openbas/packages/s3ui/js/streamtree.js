@@ -92,7 +92,8 @@ function updateStreamList(self) {
             },
             contextmenu: {
                 select_node: false,
-                items: function (node, callback) { return getContextMenu(self, node, callback); }
+                items: function (node, callback) { return getContextMenu(self, node, callback); },
+                show_at_node: false
             },
             plugins: ["checkbox", "contextmenu", "sort"]
         });

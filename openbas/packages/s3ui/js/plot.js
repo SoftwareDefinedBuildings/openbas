@@ -101,7 +101,7 @@ function repaintZoomNewData(self, callback, stopCache) {
             self.idata.oldData[stream.uuid] = [stream, data, pwe];
             numResponses++;
             if (!stopCache) {
-                s3ui.setStreamMessage(self, stream.uuid, undefined, 2);
+                s3ui.setStreamMessage(self, stream.uuid, undefined, 4);
                 s3ui.setStreamMessage(self, stream.uuid, "Caching data...", 1);
                 setTimeout(function () { cacheData(self, stream.uuid, thisID, pwe, startTime, endTime); }, 0); // do it asynchronously
             }
@@ -116,7 +116,7 @@ function repaintZoomNewData(self, callback, stopCache) {
         self.idata.drawRequestID = -1;
     }
     for (var i = 0; i < selectedStreams.length; i++) {
-        s3ui.setStreamMessage(self, selectedStreams[i].uuid, "Fetching data...", 2);
+        s3ui.setStreamMessage(self, selectedStreams[i].uuid, "Fetching data...", 4);
         s3ui.ensureData(self, selectedStreams[i].uuid, pwe, domain[0] - self.idata.oldOffsets[i], domain[1] - self.idata.oldOffsets[i], makeDataCallback(selectedStreams[i], domain[0] - self.idata.oldOffsets[i], domain[1] - self.idata.oldOffsets[i]));
     }
     if (selectedStreams.length == 0) {
@@ -600,9 +600,9 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
             }
         }
         if (noData) {
-            s3ui.setStreamMessage(self, streams[i].uuid, "No data in specified time range", 5);
+            s3ui.setStreamMessage(self, streams[i].uuid, "No data in specified time range", 3);
         } else {
-            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 5);
+            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 3);
         }
         minval.reverse();
         mean = mean.join(" ");
@@ -610,9 +610,9 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
         color = streamSettings[streams[i].uuid].color;
         dataArray.push({color: color, data: [maxval, mean], uuid: streams[i].uuid});
         if (outOfRange) {
-            s3ui.setStreamMessage(self, streams[i].uuid, "Data outside axis range; try rescaling y-axis", 4);
+            s3ui.setStreamMessage(self, streams[i].uuid, "Data outside axis range; try rescaling y-axis", 2);
         } else {
-            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 4);
+            s3ui.setStreamMessage(self, streams[i].uuid, undefined, 2);
         }
     }    
     update = d3.select(self.find("g.chartarea"))
