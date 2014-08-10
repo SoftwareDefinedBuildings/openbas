@@ -4,6 +4,8 @@ This package defines the "s3plot" template, which contains a graphing utility
 that can be included in a Meteor application. Multiple graphs can be inserted
 into the same web page and will act independently of one another.
 
+Instantiating a Graph
+---------------------
 To insert a graph with full control available to the user, simply use the
 inclusion operator:
 <pre><code>{{> s3plot}}</code></pre>
@@ -45,15 +47,47 @@ The object of parameters may have the following properties (all optional):
 When the graph has been displayed, but before any interactivity is added, the
 first callback function is invoked with a single argument, namely the template
 instance. The callback function is the mechanism through which the template
-instance is made available. The function can be used to programmatically change
-the settings (useful when settings have been hidden from the user but still
-need to be manipulated) and even change some of the parameters the graph was
-instantiated with.
+instance is made available. The template instance can be used to
+programmatically change the settings (useful when settings have been hidden
+from the user but still need to be manipulated) and even change some of the
+parameters the graph was instantiated with (see below). The first callback
+function can also be used to make simple changes to the DOM allowing for a
+customized layout.
 
-The second callback function is called when the tree of streams is fully
-loaded for the first time. This is useful for programmatically initializing the
-graph, as streams cannot be selected until the tree of streams is loaded.
+The second callback function is called when the tree of streams is initialized,
+not fully loaded. Here, streams can be selected programmatically.
 
+Custom Layouts
+--------------
+Simply including the s3plot template provides a default layout, and the first
+callback function allows for simple layout changes (see above). But for more
+advanced layouts it may be easier to write the layout in HTML. Rather than
+including the s3plot template, one can create a custom template describing the
+preferred layout and call the s3ui.\_\_init\_\_ function on the template
+instance (the implicit parameter "this") in Meteor's "rendered" callback.
+
+To make creating the HTML layout easier, several sub-templates are included.
+They are:
+
+* s3plot_plotStyles
+* s3plot_graphExport
+* s3plot_chart
+* s3plot_streamLegend
+* s3plot_axisLegend
+* s3plot_automaticUpdate
+* s3plot_timeSelection
+* s3plot_streamSelection
+
+These templates can be included in the custom template. But if you want a
+higher degree of customization, you can include the template components
+directly (though be aware that the relative positioning of the components
+of the stream and axis legends may be necessary for the correctness of the
+graph). If you do not want all of the features of the graph, you _must_ still
+include all of the templates; use the appropriate parameters upon instantiation
+to hide the components you do not need (see above).
+
+Programmatically Changing the Graph
+-----------------------------------
 The "idata" property of the template instance is an object that stores the
 instance fields  of the object (i.e., the variables used by the graph to
 keep track of its internal state). The "imethods" property of the template
@@ -62,8 +96,8 @@ the state of the graph.
 
 The bound methods provided are:
 
-* selectStreams(uuids) - Given a list of UUIDS, selects the corresponding streams in the tree.
-* deselectStreams(uuids) - Given a list of UUIDS, deselects the corresponding streams in the tree.
+* selectStreams(data\_lst) - Given DATA\_LST, a list of stream objects, selects the corresponding streams (works as long as the tree is initialized, even if no streams are loaded yet).
+* deselectStreams(data\_lst) - Given DATA\_LST, a list of stream objects, deselects the corresponding streams (works as long as the tree is initialized, even if no streams are loaded yet).
 * setStartTime(date) - Given a DATE object, sets the start time to the date it represents in local time.
 * setEndTime(date) - Given a DATE object, sets the end time to the date it represents in local time.
 * setTimezone(iana\_str) - Sets the timezone to IANA\_STR.
@@ -78,4 +112,3 @@ The bound methods provided are:
 * resetZoom() - Programmatically clicks the "Reset Zoom" button.
 * toggleAutomaticUpdate() - Programmatically checks or unchecks the "Automatically apply stream removals and changes to axis settings" checkbox.
 * changeVisuals(options) - Reinitializes the visuals with the specified OPTIONS, according to the parameters specified (from the list above). The only differences between this function and the instantiation of the graph is that the "width" and "height" properties are ignored, and the new default values are those currently applied.
-* selectMissingStreams(data\_lst) - Given DATA\_LST, an array of stream objects not present in the stream tree, selects the provided stream objects for plotting (makes it as if they were checked if they were in the stream tree).

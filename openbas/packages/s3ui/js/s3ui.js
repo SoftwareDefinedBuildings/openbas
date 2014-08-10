@@ -1,7 +1,10 @@
 s3ui = {instances: [], instanceid: -1}; // stores functions used in multiple files
 
 Template.s3plot.rendered = function () {
-        var self = this;
+        s3ui.__init__(this);
+    };
+    
+s3ui.__init__ = function (self) {
         s3ui.instances.push(self);
         
         self.idata = {}; // an object to store instance data
@@ -12,7 +15,7 @@ Template.s3plot.rendered = function () {
             s3ui.instanceid = -4503599627370495;
         }
         
-        self.find("tr.streamLegend").className = "streamLegend-" + self.idata.instanceid;
+        $(self.find("div.streamLegend")).removeClass("streamLegend").addClass("streamLegend-" + self.idata.instanceid);
         self.idata.dynamicStyles = self.find("style.dynamicStyles");
         
         s3ui.init_axis(self);
@@ -47,18 +50,18 @@ Template.s3plot.rendered = function () {
             c2 = self.data[2];
         } else {
             c1 = function () {};
-            c2 = false;
+            c2 = c1;
         }
         
-        __init__(self, c1, c2);
+        init_graph(self, c1, c2);
     };
     
 function init_visuals(self, options) {
     setVisibility(self, options, "h1.mainTitle", "hide_main_title");
     setVisibility(self, options, "h2.graphTitle", "hide_graph_title");
     setVisibility(self, options, "div.graphExport", "hide_graph_export");
-    setVisibility(self, options, "tr.streamLegend-" + self.idata.instanceid, "hide_stream_legend");
-    setVisibility(self, options, "tr.axisLegend", "hide_axis_legend");
+    setVisibility(self, options, "div.streamLegend-" + self.idata.instanceid, "hide_stream_legend");
+    setVisibility(self, options, "div.axisLegend", "hide_axis_legend");
     setVisibility(self, options, "span.settingsTitle", "hide_settings_title");
     setVisibility(self, options, "span.automaticUpdate", "hide_automatic_update");
     setVisibility(self, options, "button.plotButton", "hide_apply_button");
@@ -94,10 +97,13 @@ function setCSSRule(self, options, rule, attr) {
     }
 }
     
-function __init__(self, c1, c2) {
+function init_graph(self, c1, c2) {
     // Finish building the graph components
     s3ui.addYAxis(self);
     self.$(".removebutton").remove(); // Get rid of the remove button for the first axis
+    
+    // first callback
+    c1(self);
     
     // For some reason, Any+Time requires the text elements to have IDs.
     // So, I'm going to give them IDs that are unique across all instances
@@ -168,5 +174,6 @@ function __init__(self, c1, c2) {
     
     self.$(".streamTree").on("ready.jstree", c2);
     s3ui.updateStreamList(self);
-    c1(self);
+    
+    c2();
 }
