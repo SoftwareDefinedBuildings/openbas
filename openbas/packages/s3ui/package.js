@@ -14,6 +14,7 @@ Package.on_use(function (api) {
   var path = Npm.require('path');
   var asset_path = path.join('.');
   
+  api.add_files(path.join(asset_path, 'js', 's3ui_requester.js'), 'server');
   api.add_files(path.join(asset_path, 'img', 'openhand.cur'), 'client');
   api.add_files(path.join(asset_path, 'img', 'closedhand.cur'), 'client');
   api.add_files(path.join(asset_path, 'css', 's3ui.css'), 'client');

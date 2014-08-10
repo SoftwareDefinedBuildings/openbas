@@ -24,10 +24,12 @@ function getInfoHelper(datum, prefix, linebreak) {
     return toReturn;
 }
 
-/** Normally I'd just send a GET request with AJAX, but instead
-I'm using python to overcome cross domain restrictions */
 function getURL(url, success_callback, type) {
-    return $.post('http://localhost:7856', url, success_callback, type);
+    Meteor.call("processQuery", url, type, function (error, result) {
+            if (error == undefined) {
+                success_callback(result);
+            }
+        });
 }
 
 

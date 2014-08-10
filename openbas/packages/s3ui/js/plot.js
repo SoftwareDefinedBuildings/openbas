@@ -656,7 +656,7 @@ function drawStreams (self, data, streams, streamSettings, xScale, yScales, yAxi
     }
     
     if (self.idata.showingDensity != undefined) {
-        s3ui.setStreamMessage(self, self.idata.showingDensity, "Interval width: " + s3ui.nanosToUnit(Math.pow(2, self.idata.oldData[self.idata.showingDensity][2])), 3);
+        s3ui.setStreamMessage(self, self.idata.showingDensity, "Interval width: " + s3ui.nanosToUnit(Math.pow(2, self.idata.oldData[self.idata.showingDensity][2])), 5);
         self.$("svg.chart g.data-density-plot polyline").remove();
         showDataDensity(self, self.idata.showingDensity);
     }
