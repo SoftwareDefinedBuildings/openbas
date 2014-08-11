@@ -6,6 +6,10 @@ function init_plot(self) {
     // self.idata.WIDTH and self.idata.HEIGHT of the chart area (constants)
     self.idata.WIDTH = 600;
     self.idata.HEIGHT = 300;
+    
+    // For the permalink
+    self.idata.initzoom = 1;
+    self.idata.inittrans = 0;
 
     // Margin size (not constant)
     self.idata.margin = {left: 100, right: 100, top: 70, bottom: 60};
@@ -16,6 +20,7 @@ function init_plot(self) {
     // Parameters of the last update
     self.idata.oldStartDate = undefined;
     self.idata.oldEndDate = undefined;
+    self.idata.oldTimezone = undefined;
     self.idata.oldData = {};
     self.idata.oldXScale = undefined;
     self.idata.oldXAxis = undefined;
@@ -300,6 +305,7 @@ function drawPlot(self) {
         return;
     }
     var selectedTimezone = s3ui.getSelectedTimezone(self);
+    self.idata.oldTimezone = selectedTimezone;
     var naiveStartDateObj = self.idata.dateConverter.parse(startText);
     var naiveEndDateObj = self.idata.dateConverter.parse(endText);
     try {
@@ -364,12 +370,13 @@ function drawPlot(self) {
     
     loadingElem.html("Fetching data...");
     
+    self.idata.zoom.scale(self.idata.initzoom).translate([self.idata.inittrans, 0]).x(xScale);
+    
     // Get the data for the streams
     repaintZoomNewData(self, function () {
             if (!sameTimeRange) {
                 d3.select(self.find("g.x-axis"))
                     .call(xAxis);
-                self.idata.zoom.x(xScale);
             }
             loadingElem.html("Computing axes...");
             // Set a timeout so the new message (Computing axes...) actually shows

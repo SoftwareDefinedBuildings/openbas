@@ -24,6 +24,7 @@ callback functions.
 The object of parameters may have the following properties (all optional):
 
 * hide\_main\_title - TRUE if the main title is to be hidden. Defaults to FALSE.
+* hide\_permalink - TRUE if the button to generate a permalink and the space to display it are to be hidden. Defaults to FALSE.
 * hide\_graph\_title - TRUE if the header above the graph (the text "Graph") is to be hidden. Defaults to FALSE.
 * hide\_graph\_export - TRUE if the menu to export the graph to an SVG file is to be hidden. Defaults to FALSE.
 * hide\_stream\_legend - TRUE if the legend displaying streams is to be hidden. Defaults to FALSE.
@@ -39,8 +40,9 @@ The object of parameters may have the following properties (all optional):
 * hide\_refresh\button - TRUE if the "Refresh Stream Tree" button is to be hidden. Defaults to FALSE.
 * hide\_axis\_selection - TRUE if the axis selection menu within the legend is to be hidden. Defaults to FALSE.
 * disable\_color\_selection - TRUE if the color selection menu within the legend is to be disabled. Defaults to FALSE.
+* permalinkStart - Specifies the start of the permalink URL. Defaults to the current window location of the browser, excluding any seach queries in the URL.
 * dataURLStart - Specifies the start of the url where to get data. Defaults to "http://bunker.cs.berkeley.edu/backend/api/data/uuid/".
-* tagsURL - Specifies the url to query to get stream info. Defaults "http://bunker.cs.berkeley.edu/backend/api/tags".
+* tagsURL - Specifies the url to query to get stream info. Defaults "http://new.openbms.org/backend/api/query?".
 * width - Specifies the width of the chart area (_not_ the whole graph). Defaults to 600.
 * height - Specifies the height of the chart area (_not_ the whole graph). Defaults to 300.
 

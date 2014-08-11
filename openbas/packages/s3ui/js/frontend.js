@@ -12,6 +12,7 @@ function init_frontend(self) {
     self.idata.changedTimes = undefined;
     self.idata.otherChange = undefined;
     self.idata.automaticAxisUpdate = false; // True if axes will be updated without the need for an "Update Axes" button
+    self.idata.initPermalink = window.location.hostname + (function (port) { if (port === '') { return ''; } return ':' + port; })(window.location.port) + window.location.pathname; // The start of the permalink
 }
 
 /* Adds or removes (depending on the value of SHOW) the stream
@@ -175,9 +176,22 @@ function createPlotDownload(self) {
     linkLocation.insertBefore(downloadAnchor, null); // ... and replace it with this download link
 }
 
+function createPermalink(self) {
+    var permalink = 'streams=' + $.map(self.idata.selectedStreams, function (d) { return encodeURIComponent(d.uuid); }).join(',');
+    permalink += '&start=' + (self.idata.oldStartDate / 1000) + '&end=' + (self.idata.oldEndDate / 1000) + '&tz=' + encodeURIComponent(self.idata.oldTimezone) + '&zoom=' + encodeURIComponent(self.idata.zoom.scale()) + '&translate=' + encodeURIComponent(self.idata.zoom.translate()[0]);
+    var URL = self.idata.initPermalink + '?' + permalink;
+    var anchor = document.createElement("a");
+    anchor.innerHTML = URL;
+    anchor.setAttribute("href", URL);
+    var permalocation = self.find(".permalink");
+    permalocation.innerHTML = "";
+    permalocation.insertBefore(anchor, null);
+}
+
 s3ui.init_frontend = init_frontend;
 s3ui.toggleLegend = toggleLegend;
 s3ui.setStreamMessage = setStreamMessage;
 s3ui.updatePlotMessage = updatePlotMessage;
 s3ui.getSelectedTimezone = getSelectedTimezone;
 s3ui.createPlotDownload = createPlotDownload;
+s3ui.createPermalink = createPermalink;

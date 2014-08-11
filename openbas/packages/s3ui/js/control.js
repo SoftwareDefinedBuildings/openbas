@@ -192,7 +192,8 @@ function selectStreams(data_lst) {
      var node;
      var source;
      var path;
-     var streamTree = this.idata.streamTree
+     var streamTree = this.idata.streamTree;
+     var loadingRootNodes = this.idata.loadingRootNodes;
      for (var i = 0; i < data_lst.length; i++) {
          source = data_lst[i].Metadata.SourceName;
          path = data_lst[i].Path;
@@ -216,8 +217,11 @@ function selectStreams(data_lst) {
                  continue;
              }
              node = streamTree.get_node(source);
-             if (node.children.length == 0) {
-                 streamTree.load_node(source); // It will be automatically selected if it is there
+             if (node.children.length == 0 && !loadingRootNodes[node.id]) {
+                 loadingRootNodes[node.id] = true;
+                 streamTree.load_node(source, function () {
+                        loadingRootNodes[node.id] = false;
+                    }); // It will be automatically selected if it is there
              }
          } else {
              streamTree.select_node(node, false, true);
@@ -259,5 +263,66 @@ function deselectStreams(data_lst) {
     s3ui.applySettings(this);
 }
 
+/* Given LINK, the portion of a hyperlink that occurs after the question mark
+   in a url, creates the state of the graph it describes. This function assumes
+   that the graph has just been loaded, with no streams selected or custom
+   settings applied. */
+function executePermalink(self, link) {
+    if (link === "") {
+        return;
+    }
+    // Turn the data in LINK into an object
+    var args = {}; // Maps argument name to the value it was given
+    var kws = link.split("&");
+    var kw;
+    var i;
+    for (i = 0; i < kws.length; i++) {
+        kw = kws[i].split('=');
+        args[kw[0]] = kw[1];
+    }
+    
+    var streams = (args.streams || args.streamids).split(',');
+    var streamObjs = [];
+    var stream;
+    var query = ' select * where';
+    for (i = 0; i < streams.length; i++) {
+        stream = decodeURIComponent(streams[i]);
+        if (stream.charAt(0) == '{') {
+            streamObjs.push(JSON.parse(stream));
+        } else {
+            if (streamObjs.length != i) {
+                query += ' or';
+            }
+            query += ' uuid = "' + streams[i] + '"';
+        }
+    }
+    
+    if (streamObjs.length == streams.length) {
+        finishExecutingPermalink(self, streamObjs, args);
+    } else {
+        s3ui.getURL('SENDPOST ' + self.idata.tagsURL + query, function (data) {
+                var receivedStreamObjs = JSON.parse(data);
+                finishExecutingPermalink(self, streamObjs.concat(receivedStreamObjs), args);
+            }, 'text');
+    }
+}
+
+function finishExecutingPermalink(self, streams, args) {
+    self.imethods.selectStreams(streams);
+    self.imethods.setStartTime(new Date(parseInt(args.start) * 1000));
+    self.imethods.setEndTime(new Date(parseInt(args.end) * 1000));
+    if (args.hasOwnProperty('tz')) {
+        self.imethods.setTimezone(decodeURIComponent(args.tz));
+    }
+    if (args.hasOwnProperty('zoom')) {
+        self.idata.initzoom = parseFloat(decodeURIComponent(args.zoom));
+    }
+    if (args.hasOwnProperty('translate')) {
+        self.idata.inittrans = parseFloat(decodeURIComponent(args.translate));
+    }
+    self.imethods.applyAllSettings();
+}
+
 s3ui.init_control = init_control;
 s3ui.bind_method = bind_method;
+s3ui.executePermalink = executePermalink;

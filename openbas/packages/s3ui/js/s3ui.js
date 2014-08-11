@@ -27,7 +27,7 @@ s3ui.__init__ = function (self) {
         
         var c1, c2;
         
-        if (self.data !== null && typeof self.data === "object" && typeof self.data[0] === "object" && typeof self.data[1] === "function" && typeof self.data[2] === "function") {
+        if (self.data !== null && typeof self.data === "object" && typeof self.data[0] === "object" && typeof self.data[1] === "function" && (typeof self.data[2] === "function" || typeof self.data[2] === "string")) {
             init_visuals(self, self.data[0]);
             if (self.data[0].width != undefined) {
                 self.find("svg.chart").setAttribute("width", self.data[0].width);
@@ -42,6 +42,9 @@ s3ui.__init__ = function (self) {
             }
             if (self.data[0].tagsURL != undefined) {
                 self.idata.tagsURL = self.data[0].tagsURL;
+            }
+            if (self.data[0].permalinkStart != undefined) {
+                self.idata.initPermalink = self.data[0].permalinkStart;
             }
             self.imethods.changeVisuals = function (options) {
                     init_visuals(self, options);
@@ -58,6 +61,7 @@ s3ui.__init__ = function (self) {
     
 function init_visuals(self, options) {
     setVisibility(self, options, "h1.mainTitle", "hide_main_title");
+    setVisibility(self, options, "div.permalinkGenerate", "hide_permalink");
     setVisibility(self, options, "h2.graphTitle", "hide_graph_title");
     setVisibility(self, options, "div.graphExport", "hide_graph_export");
     setVisibility(self, options, "div.streamLegend-" + self.idata.instanceid, "hide_stream_legend");
@@ -111,6 +115,10 @@ function init_graph(self, c1, c2) {
     self.find(".enddate").id = "end" + self.idata.instanceid;
     
     // Event handlers are added programmatically
+    self.find(".getPermalink").onclick = function () {
+            self.find(".permalink").innerHTML = 'Generating permalink...';
+            setTimeout(function () { s3ui.createPermalink(self); }, 50);
+        };
     self.find(".makeGraph").onclick = function () {
             self.find(".download-graph").innerHTML = 'Creating image...';
             setTimeout(function () { s3ui.createPlotDownload(self); }, 50);
@@ -172,8 +180,11 @@ function init_graph(self, c1, c2) {
     self.idata.otherChange = false;
     s3ui.updatePlotMessage(self);
     
-    self.$(".streamTree").on("ready.jstree", c2);
     s3ui.updateStreamList(self);
     
-    c2();
+    if (typeof c2 == "function") {
+        c2();
+    } else {
+        s3ui.executePermalink(self, c2);
+    }
 }

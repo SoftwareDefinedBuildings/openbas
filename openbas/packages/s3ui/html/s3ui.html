@@ -4,6 +4,7 @@
     </style>
     <!-- This is where <body> started in the original HTML document. -->
     <h1 class="mainTitle">sMAP Plotting Tool</h1>
+    {{> s3plot_permalink}}
     <h2 class="graphTitle">Graph</h2>
     {{> s3plot_graphExport}}
     <table>
@@ -68,6 +69,13 @@
             font-size: 14px;
         }
     </style>
+</template>
+
+<template name="s3plot_permalink">
+    <div class="permalinkGenerate">
+        <button class="getPermalink">Generate Permalink</button>
+        <span class="permalink"></span>
+    </div>
 </template>
 
 <template name="s3plot_graphExport">
