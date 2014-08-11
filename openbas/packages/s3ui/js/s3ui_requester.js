@@ -14,9 +14,14 @@ Meteor.methods({
                     payload = '';
                     request = "GET";
                 }
-                var result = HTTP.call(request, url, {
-                        content: payload
-                    });
-                return result.content;
+                try { 
+                    var result = HTTP.call(request, url, {
+                            content: payload
+                        });
+                    return result.content;
+                } catch (err) {
+                    console.log(err);
+                    return '[]';
+                }
             }
     });

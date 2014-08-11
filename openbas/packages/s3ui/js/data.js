@@ -140,7 +140,14 @@ function ensureData(self, uuid, pointwidthexp, startTime, endTime, callback) {
         // If j - i > 1, the existing entries between i and j are discarded.
         var urlCallback = function (streamdata) {
                 if (dataCache.hasOwnProperty(uuid) && dataCache[uuid][pointwidthexp] == cache) { // If the stream or pointwidth has been deleted to limit memory, just return and don't cache
-                    insertData(self, uuid, cache, JSON.parse(streamdata)[0].XReadings, queryStart, queryEnd, callback);
+                    var data;
+                    try {
+                        data = JSON.parse(streamdata)[0].XReadings;
+                    } catch (err) {
+                        console.log('Invalid data response from server: ' + err);
+                        data = [];
+                    }
+                    insertData(self, uuid, cache, data, queryStart, queryEnd, callback);
                 }
             };
         /* queryStart and queryEnd are the start and end of the query I want,
