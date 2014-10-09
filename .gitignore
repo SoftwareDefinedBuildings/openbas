@@ -1,2 +1,6 @@
 *.pyc
 monitor/report/report.json
+*.swp
+*.swo
+.DS_Store
+.cache
