@@ -52,6 +52,22 @@ def report():
 def tgraphs():
     return render_template("tgraphs.html")
 
+@app.route("/pichart")
+def pichart():
+    def get_sec(s):
+        l = s.split(':')
+        return int(l[0]) * 3600 + int(l[1]) * 60 + int(l[2])
+
+    rtus_power = data['disaggregate']
+    rtus_energy = {}
+    for rtu in rtus_power:
+        cooling_time = get_sec(data['hvac'][rtu]['Total Cooling Time'])
+        rtus_energy[rtu] = rtus_power[rtu] * cooling_time
+    total_energy = data['demand']['Total Demand']['Amount']
+    rtus_energy['other'] = total_energy - sum(rtus_energy.values())
+    print(rtus_energy)
+    return render_template("pichart.html", rtus_energy=rtus_energy)
+
 @app.route("/demanddata")
 def demanddata():
     return jsonify({'data': [{'date': k,'value': v} for k,v in data['demand']['Demand Data'].iteritems()]})
