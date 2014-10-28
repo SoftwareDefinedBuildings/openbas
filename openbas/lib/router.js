@@ -2,9 +2,7 @@ Router.onBeforeAction(function(){
   if (!(Meteor.loggingIn() || Meteor.user())) {
     this.render('login');
     pause();
-  } else {
-    console.log('logged in as ' + Meteor.user());
-  }
+  } 
 });
 
 Router.map(function() {
