@@ -169,7 +169,12 @@ Template.actuator_continuous.rendered = function() {
     min = that.Actuator.MinValue;
     max = that.Actuator.MaxValue;
   } else {
-    var states = EJSON.parse(that.Actuator.States);
+    var states;
+    if (typeof(that.Actuator.States) == "object") {
+        states = that.Actuator.States;
+    } else {
+        states = EJSON.parse(that.Actuator.States);
+    }
     min = states[0];
     max = states[1]
   }

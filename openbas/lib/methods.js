@@ -228,7 +228,7 @@ if (Meteor.isServer) {
     query: function(q){
       this.unblock();
       var url = Meteor.settings.archiverUrl + "/api/query?key="+Meteor.settings.apikey;
-      console.log("Query:",q);
+      console.log("Query:",q, url);
       var r = HTTP.call("POST", url, {content: q});
       return EJSON.parse(r.content);
     },
@@ -247,8 +247,12 @@ if (Meteor.isServer) {
       var r = HTTP.call("GET", url);
       res = EJSON.parse(r.content);
       if ('Actuator' in res[0] && 'Values' in res[0].Actuator) {
-        var x = res[0].Actuator.Values.replace(/'/g, '"');
-        res[0].Actuator.Values = EJSON.parse(x);
+        if( Object.prototype.toString.call( res[0].Actuator ) === '[object Object]' ) {
+            console.log(res[0].Actuator);
+        } else {
+            var x = res[0].Actuator.Values.replace(/'/g, '"');
+            res[0].Actuator.Values = EJSON.parse(x);
+        }
       }
       return res;
     },
