@@ -68,17 +68,9 @@
       <tr class="schedulerow" data-time="{{start}}" id="{{name}}">
         <td>{{name}}</td>
         <td>{{start}}</td>
-        {{#each points}}
-          {{#if isNamed 'temp_heat'}}
-          <td>{{value}}</td>
-          {{/if}}
-          {{#if isNamed 'temp_cool'}}
-          <td>{{value}}</td>
-          {{/if}}
-          {{#if isNamed 'on'}}
-          <td>{{value}}</td>
-          {{/if}}
-        {{/each}}
+        <td>{{getValue 'temp_heat'}}</td>
+        <td>{{getValue 'temp_cool'}}</td>
+        <td>{{getValue 'on'}}</td>
       </tr>
       {{/each}}
       </tbody>

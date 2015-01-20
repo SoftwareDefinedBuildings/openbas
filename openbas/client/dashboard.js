@@ -182,6 +182,12 @@ Template.hvac_zone_widget.helpers({
 Template.schedule_widget.helpers({
   isNamed: function(path){
     return path == this.path;
+  },
+  getValue: function(path){
+    var point = _.find(this.points, function(p){
+      return path == p.path;
+    });
+    return point.value;
   }
 });
 
